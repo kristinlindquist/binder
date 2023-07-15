@@ -26,7 +26,7 @@
     "learning_rate": 3e-5,
     "logging_steps": 50,
     "load_best_model_at_end": true,
-    "metric_for_best_model": "adj_f1",
+    "metric_for_best_model": "f1",
     "greater_is_better": true,
     "save_strategy": "steps",
     "save_steps": 100,
