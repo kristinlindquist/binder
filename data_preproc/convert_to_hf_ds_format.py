@@ -35,6 +35,43 @@ def convert_default(example: Dict) -> Dict:
         'word_end_chars': end_words
     }
 
+def convert_genia(example):
+    """
+    Adjusted method for extracting GENIA from this source:
+    https://github.com/yhcc/CNN_Nested_NER/tree/master/preprocess/outputs/genia
+    """
+    offset_mapping = []
+    text = ''
+    for token in example['tokens']:
+        if text == '':
+            offset_mapping.append((0, len(token)))
+            text += token
+        else:
+            if token in [',', '.']:
+              text += token
+            else:
+              text += ' ' + token
+            offset_mapping.append((len(text) - len(token), len(text)))
+    entity_types, entity_start_chars, entity_end_chars = [], [], []
+    for ann in example['entity_mentions']:
+        start = ann["start"]
+        end = ann["end"]
+        entity_type = ann["entity_type"]
+        start, end = offset_mapping[start][0], offset_mapping[end][1]
+        entity_types.append(entity_type)
+        entity_start_chars.append(start)
+        entity_end_chars.append(end)
+
+    start_words, end_words= zip(*offset_mapping)
+    return {
+        'text': text,
+        'entity_types': entity_types,
+        'entity_start_chars': entity_start_chars,
+        'entity_end_chars': entity_end_chars,
+        'id': example['sent_id'],
+        'word_start_chars': start_words,
+        'word_end_chars': end_words
+    }
 
 def convert_conll2003(example: Dict) -> Dict:
     # From token offset to char offset.
@@ -75,20 +112,20 @@ def convert_conll2003(example: Dict) -> Dict:
     }
 
 
-def main(args):
-    if args.task == "conll2003":
-        convert = convert_conll2003
-    else:
-        convert = convert_default
-    os.makedirs(os.path.dirname(args.output), exist_ok=True)
+def main(input, output):
+    os.makedirs(os.path.dirname(output), exist_ok=True)
     entities, docs = 0, 0
-    with open(args.output, 'w', encoding='utf-8') as fw, open(args.input, encoding='utf-8') as fr:
+    with open(output, 'w', encoding='utf-8') as fw, open(input, encoding='utf-8') as fr:
         ids = set()
-        for ln in fr:
+        for idx, ln in enumerate(fr):
             if ln == '\n':
                 continue
             example = json.loads(ln)
-            example = convert(example) 
+            try:
+              example = convert(example)
+            except Exception as e:
+              print(f"Could not convert line {idx}; skipping.")
+              continue
             entities += len(example["entity_types"])
             docs += 1
             assert example['id'] not in ids
