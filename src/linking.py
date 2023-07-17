@@ -5,6 +5,8 @@ from typing import TypedDict
 import os
 import logging
 from concurrent.futures import ThreadPoolExecutor
+import h5py
+import math
 
 UmlsRecord = TypedDict("UmlsRecord", {"cui": str, "name": str, "description": str })
 
@@ -62,30 +64,54 @@ def encode_umls_kb(config):
 
     # Encode each UMLS entity 
     umls_embeds = []
-    batch_size = 16
+    batch_size = 32
+    save_interval = 100 # Save the embeddings every 100 batches
 
-    for idx in range(0, len(umls_kb), batch_size):
-        batch_entities = umls_kb[idx : idx + batch_size]
-        batch_texts = [entity['name'] for entity in batch_entities]
+    output_file = "umls_embeds.h5"  # Specify the file path to save the embeddings
+    output_dataset = "embeddings"
 
-        inputs = tokenizer.batch_encode_plus(
-            batch_texts,
-            return_tensors='pt',
-            padding=True,
-            truncation=True,
-            max_length=256
-        )
+    with h5py.File(output_file, "w") as h5_file:
+        for idx in range(0, math.ceil(len(umls_kb) / batch_size)):
+            batch = idx * batch_size
+            logger.info("Starting on batch %s", batch)
+            batch_entities = umls_kb[batch : batch + batch_size]
+            batch_texts = [entity["name"] for entity in batch_entities]
 
-        outputs = encoder(**inputs)
+            inputs = tokenizer.batch_encode_plus(
+                batch_texts,
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+                max_length=256,
+            )
 
-        # Use the CLS token embedding as the entity representation
-        embeds = outputs.last_hidden_state[:, 0, :]
-        umls_embeds.extend(embeds)
+            outputs = encoder(**inputs)
 
-        if idx % 100 == 0:
-            logger.info("Encoded %s UMLS entities", idx)
+            # Use the CLS token embedding as the entity representation
+            embeds = outputs.last_hidden_state[:, 0, :]
+            umls_embeds.extend(embeds)
 
-    umls_embeds = torch.stack(umls_embeds, dim=0)
+            # if batch % (save_interval * batch_size) == 1 or batch + batch_size >= len(umls_kb):
+            if (idx + 1) % save_interval == 0 or idx + batch_size >= len(umls_kb):
+                embeds_tensor = torch.stack(umls_embeds, dim=0)
+                logger.info("Encoded/saved %s UMLS entities (%s, %s)", (idx + 1) * batch_size, len(umls_embeds), embeds_tensor.shape)
+                save_embeddings_to_disk(h5_file, output_dataset, (idx + 1) * batch_size, embeds_tensor)
+                umls_embeds = []
+
+
     logger.info("Encoded UMLS entities total: %s", len(umls_embeds))
 
     return umls_embeds
+
+
+def save_embeddings_to_disk(h5_file, dataset_name, start_index, embeddings):
+    if dataset_name not in h5_file:
+        h5_file.create_dataset(dataset_name, shape=(embeddings.size(0), embeddings.size(1)), dtype=float)
+
+    logger.info("From %s to %s", start_index - embeddings.size(0), start_index)
+    h5_file[dataset_name][start_index - embeddings.size(0):start_index, :] = embeddings.detach().cpu().numpy()
+
+def load_embeddings_from_disk(file_path, dataset_name):
+    with h5py.File(file_path, "r") as h5_file:
+        embeddings = h5_file[dataset_name][:]
+    return torch.tensor(embeddings)
