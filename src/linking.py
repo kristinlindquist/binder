@@ -4,6 +4,7 @@ import torch
 from typing import TypedDict
 import os
 import logging
+from concurrent.futures import ThreadPoolExecutor
 
 UmlsRecord = TypedDict("UmlsRecord", {"cui": str, "name": str, "description": str })
 
@@ -45,7 +46,7 @@ def load_umls_kb(umls_dir: str) -> list[UmlsRecord]:
             'name': name,
             'description': definitions.get(f"{cui}-{source}") or ""
         })
-        if idx % 10000 == 0:
+        if idx % 100000 == 0:
             logger.info("Loaded %s UMLS lines, last %s", idx, umls_kb[-1])
     logger.info("Loaded %s UMLS entities", len(umls_kb))
     return umls_kb
@@ -61,20 +62,30 @@ def encode_umls_kb(config):
 
     # Encode each UMLS entity 
     umls_embeds = []
-    for idx, entity in enumerate(umls_kb):
-        entity_text = entity['name'] + ' ' + entity['description']
-        inputs = tokenizer(entity_text, return_tensors='pt')
+    batch_size = 16
+
+    for idx in range(0, len(umls_kb), batch_size):
+        batch_entities = umls_kb[idx : idx + batch_size]
+        batch_texts = [entity['name'] for entity in batch_entities]
+
+        inputs = tokenizer.batch_encode_plus(
+            batch_texts,
+            return_tensors='pt',
+            padding=True,
+            truncation=True,
+            max_length=256
+        )
+
         outputs = encoder(**inputs)
 
         # Use the CLS token embedding as the entity representation
-        embed = outputs.last_hidden_state[:,0,:]  
-        umls_embeds.append(embed)
+        embeds = outputs.last_hidden_state[:, 0, :]
+        umls_embeds.extend(embeds)
 
-        if idx % 10000 == 0:
+        if idx % 100 == 0:
             logger.info("Encoded %s UMLS entities", idx)
 
-    logger.info("Encoded UMLS entities", len(umls_embeds))
-    
-    umls_embeds = torch.stack(umls_embeds)
+    umls_embeds = torch.stack(umls_embeds, dim=0)
+    logger.info("Encoded UMLS entities total: %s", len(umls_embeds))
 
     return umls_embeds

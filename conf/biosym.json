@@ -16,7 +16,7 @@
     "overwrite_cache": false,
     "overwrite_output_dir": true,
     "do_train": true,
-    "fp16": true,
+    "fp16": false,
     "gradient_checkpointing": true,
     "optim": "adamw_torch",
     "label_names": ["ner"],
