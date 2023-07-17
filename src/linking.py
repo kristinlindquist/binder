@@ -2,6 +2,11 @@
 from transformers import AutoModel, AutoTokenizer
 import torch
 from typing import TypedDict
+import os
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 # C0630105|ENG|P|L1127426|PF|S1353962|Y|A1314408||M0147312|C051808|MSH|NM|C051808|6-amino-1-arabinofuranosyl-1H-pyrrolo(3,2-c)pyridin-4(5H)-one|0|N|256|
 
@@ -21,7 +26,7 @@ def load_umls_kb(umls_dir: str) -> list[UmlsRecord]:
     with open(term_filename, 'r') as f:
         # get lines that are English, preferred
         # TODO: synonyms?
-        terms = [line for line in f.readlines() if '|ENG|P|' in line]
+        lines = [line for line in f.readlines() if '|ENG|P|' in line]
 
     umls_kb = []
     for line in lines:
@@ -35,6 +40,7 @@ def load_umls_kb(umls_dir: str) -> list[UmlsRecord]:
             'name': name,
             'description': get_definition(cui, source, def_filename)
         })
+    logger.info("Loaded %s UMLS entities", len(umls_kb))
 
 def encode_umls_kb(config, umls_kb):
     """
@@ -46,7 +52,7 @@ def encode_umls_kb(config, umls_kb):
 
     # Encode each UMLS entity 
     umls_embeds = []
-    for entity in umls_kb:
+    for idx, entity in enumerate(umls_kb):
         entity_text = entity['name'] + ' ' + entity['description']
         inputs = tokenizer(entity_text, return_tensors='pt')
         outputs = encoder(**inputs)
@@ -55,6 +61,11 @@ def encode_umls_kb(config, umls_kb):
         embed = outputs.last_hidden_state[:,0,:]  
         umls_embeds.append(embed)
 
-    umls_embeds = torch.stack(umls_embeds)
+        if idx % 10000 == 0:
+            logger.info("Loaded %s UMLS entities", idx)
+
+    logger.info("Embedded UMLS entities", len(umls_embeds))
     
+    umls_embeds = torch.stack(umls_embeds)
+
     return umls_embeds
