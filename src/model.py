@@ -6,8 +6,12 @@ import torch.nn.functional as F
 import numpy as np
 from transformers import PreTrainedModel, AutoModel, AutoConfig
 from transformers.file_utils import ModelOutput
+import logging
 
-from .linking import load_umls_kb
+logger = logging.getLogger(__name__)
+logger.setLevel("INFO")
+
+from .linking import encode_umls_kb
 
 
 def tiny_value_of_dtype(dtype: torch.dtype):
@@ -93,10 +97,10 @@ class BinderModelOutput(ModelOutput):
 class Binder(PreTrainedModel):
 
     def __init__(self, config):
+        logger.info("Initing Binder")
         super().__init__(config)
 
-        umls_kb = load_umls_kb(config.umls_dir)
-        self.umls_entities = encode_umls_kb(config, umls_kb)
+        self.umls_entities = encode_umls_kb(config)
 
         hf_config = AutoConfig.from_pretrained(
             pretrained_model_name_or_path=config.pretrained_model_name_or_path,
