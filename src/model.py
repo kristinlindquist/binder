@@ -95,6 +95,9 @@ class Binder(PreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
 
+        umls_kb = load_umls_kb(config.umls_dir)
+        self.umls_entities = encode_umls_kb(config, umls_kb)
+
         hf_config = AutoConfig.from_pretrained(
             pretrained_model_name_or_path=config.pretrained_model_name_or_path,
             cache_dir=config.cache_dir,
@@ -145,9 +148,6 @@ class Binder(PreTrainedModel):
             config=hf_config,
             add_pooling_layer=False
         )
-
-        umls_kb = load_umls_kb(config.umls_dir)
-        self.umls_entities = encode_umls_kb(config, umls_kb)
 
     def _init_weights(self, module):
         """Initialize the weights"""
