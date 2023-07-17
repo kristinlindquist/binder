@@ -88,6 +88,9 @@ class ModelArguments:
     ner_loss_weight: float = field(
         default=0.5, metadata={"help": "NER loss weight."}
     )
+    umls_dir: str = field(
+        default="/tmp/umls", metadata={"help": "Path to UMLS directory."}
+    )
 
 
 @dataclass
