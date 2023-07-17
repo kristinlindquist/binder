@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from typing import Optional, List
 
 import datasets
-from datasets import load_dataset
+from datasets import load_dataset, DatasetDict
 
 import transformers
 from transformers import (
@@ -236,7 +236,7 @@ def main():
         handlers=[logging.StreamHandler(sys.stdout), log_file_handler],
     )
 
-    log_level = "INFO"
+    log_level = logging.INFO
     logger.setLevel(log_level)
     datasets.utils.logging.set_verbosity(log_level)
     transformers.utils.logging.set_verbosity(log_level)
@@ -279,6 +279,7 @@ def main():
     # In distributed training, the load_dataset function guarantee that only one local process can concurrently
     # download the dataset.
     data_files = {}
+    extension = None
     if data_args.train_file is not None:
         data_files["train"] = data_args.train_file
         extension = data_args.train_file.split(".")[-1]
@@ -289,7 +290,11 @@ def main():
     if data_args.test_file is not None:
         data_files["test"] = data_args.test_file
         extension = data_args.test_file.split(".")[-1]
-    raw_datasets = load_dataset(extension, data_files=data_files, cache_dir=model_args.cache_dir)
+
+    if not extension:
+        raise ValueError("no file extension detected.")
+
+    raw_datasets: DatasetDict = load_dataset(extension, data_files=data_files, cache_dir=model_args.cache_dir)
     # See more about loading any type of standard or custom dataset (from files, python dict, pandas DataFrame, etc) at
     # https://huggingface.co/docs/datasets/loading_datasets.html.
 
@@ -311,7 +316,7 @@ def main():
         pretrained_model_name_or_path=model_args.config_name if model_args.config_name else model_args.model_name_or_path,
         cache_dir=model_args.cache_dir,
         revision=model_args.model_revision,
-        use_auth_token=True if model_args.use_auth_token else None,
+        use_auth_token=True if model_args.use_auth_token else False,
         hidden_dropout_prob=model_args.hidden_dropout_prob,
         max_span_width=data_args.max_seq_length + 1,
         use_span_width_embedding=model_args.use_span_width_embedding,
@@ -344,8 +349,9 @@ def main():
     # Load entity type knowledge
     entity_type_knowledge = load_dataset(
         "json", data_files=data_args.entity_type_file, cache_dir=model_args.cache_dir
-    )["train"]
-    entity_type_knowledge = entity_type_knowledge.filter(
+    )["train"] # type: ignore
+
+    entity_type_knowledge = entity_type_knowledge.filter( # type: ignore
         lambda example: (
             example["dataset"] == data_args.dataset_name and (
                 len(data_args.dataset_entity_types) == 0 or
