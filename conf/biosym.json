@@ -35,5 +35,6 @@
     "evaluation_strategy": "steps",
     "eval_steps": 100,
     "do_predict": true,
-    "output_dir": "/tmp/biosym"
+    "output_dir": "/tmp/biosym",
+    "umls_dir": "/tmp/umls"
 }
