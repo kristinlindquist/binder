@@ -108,6 +108,7 @@ class Binder(PreTrainedModel):
         self.type_span_linear = torch.nn.Linear(hf_config.hidden_size, config.linear_size)
         self.start_linear = torch.nn.Linear(hf_config.hidden_size, config.linear_size)
         self.end_linear = torch.nn.Linear(hf_config.hidden_size, config.linear_size)
+
         if config.use_span_width_embedding:
             self.span_linear = torch.nn.Linear(hf_config.hidden_size * 2 + config.linear_size, config.linear_size)
             self.width_embeddings = torch.nn.Embedding(config.max_span_width, config.linear_size, padding_idx=0)
@@ -124,6 +125,11 @@ class Binder(PreTrainedModel):
         self.threshold_loss_weight = config.threshold_loss_weight
         self.ner_loss_weight = config.ner_loss_weight
 
+        # for entity linking
+        self.umls_dir = config.umls_dir
+        self.link_linear = torch.nn.Linear(hf_config.hidden_size, config.linear_size)
+        self.link_loss_weight = config.link_loss_weight
+
         # Initialize weights and apply final processing
         self.post_init()
 
@@ -137,6 +143,9 @@ class Binder(PreTrainedModel):
             config=hf_config,
             add_pooling_layer=False
         )
+
+        umls_kb = load_umls_kb(config.umls_dir)
+        self.umls_entities = encode_umls_kb(config, umls_kb)
 
     def _init_weights(self, module):
         """Initialize the weights"""
@@ -231,6 +240,11 @@ class Binder(PreTrainedModel):
         span_scores = self.span_logit_scale.exp() * type_linear_output.unsqueeze(0) @ span_linear_output.transpose(1, 2)
         span_scores = span_scores.view(batch_size, num_types, seq_length, seq_length)
 
+        # entity linking
+        span_embs = outputs
+        linking_scores = self.linear(span_embs) @ self.umls_entities.T 
+        linking_scores = linking_scores.view(batch_size, num_types, seq_length, seq_length) # right?
+    
         total_loss = None
         if ner is not None:
             flat_start_scores = start_scores.view(batch_size * num_types, seq_length)
@@ -258,11 +272,13 @@ class Binder(PreTrainedModel):
             start_loss = contrastive_loss(start_scores[ner_indices], ner_starts, ner_start_masks)
             end_loss = contrastive_loss(end_scores[ner_indices], ner_ends, ner_end_masks)
             span_loss = contrastive_loss(span_scores[ner_indices], (ner_starts, ner_ends), ner_span_masks)
+            link_loss = contrastive_loss(linking_scores[ner_indices], (ner_starts, ner_ends), ner_span_masks)
 
             total_loss = (
                 self.start_loss_weight * start_loss +
                 self.end_loss_weight * end_loss +
-                self.span_loss_weight * span_loss
+                self.span_loss_weight * span_loss +
+                self.link_loss_weight * link_loss # entity linking
             )
 
             total_loss = self.ner_loss_weight * total_loss + self.threshold_loss_weight * threshold_loss
