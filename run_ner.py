@@ -168,7 +168,7 @@ class DataTrainingArguments:
         },
     )
     entity_type_file: str = field(
-        default=None,
+        default="",
         metadata={"help": "The entity type file contains all entity type names, descriptions, etc."},
     )
     dataset_entity_types: Optional[List[str]] = field(

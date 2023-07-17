@@ -22,7 +22,7 @@ class Annotation:
     linked_entity: Optional[str] = None
 
 
-def compute_tp_fn_fp(predictions: Set, labels: Set, **kwargs) -> Dict[str, float]:
+def compute_tp_fn_fp(predictions: Set, labels: Set, **kwargs) -> Dict[str, int]:
     # tp, fn, fp
     if len(predictions) == 0:
         return {"tp": 0, "fn": len(labels), "fp": 0}
@@ -58,7 +58,7 @@ def postprocess_nested_predictions(
     max_span_length: int = 30,
     output_dir: Optional[str] = None,
     prefix: Optional[str] = None,
-    log_level: Optional[int] = logging.WARNING,
+    log_level: int = logging.WARNING,
     tokenizer = None,
     **kwargs,
 ) -> Dict:
@@ -155,7 +155,7 @@ def postprocess_nested_predictions(
                     start_char=start_char,
                     end_char=end_char,
                     text=example["text"][start_char:end_char],
-                    entity=linked_entity
+                    linked_entity=linked_entity
                 )
                 example_predictions.add(pred)
 

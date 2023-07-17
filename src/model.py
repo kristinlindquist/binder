@@ -51,7 +51,7 @@ def masked_log_softmax(vector: torch.Tensor, mask: torch.BoolTensor, dim: int = 
     """
     if mask is not None:
         while mask.dim() < vector.dim():
-            mask = mask.unsqueeze(1)
+            mask = mask.unsqueeze(1) # type: ignore
         # vector + mask.log() is an easy way to zero out masked elements in logspace, but it
         # results in nans when the whole vector is masked.  We need a very small value instead of a
         # zero in the mask for these cases.
@@ -63,12 +63,12 @@ def contrastive_loss(
     scores: torch.FloatTensor,
     positions: Union[List[int], Tuple[List[int], List[int]]],
     mask: torch.BoolTensor,
-    prob_mask: torch.BoolTensor = None,
+    prob_mask: torch.BoolTensor,
 ) -> torch.FloatTensor:
     batch_size, seq_length = scores.size(0), scores.size(1)
     if len(scores.shape) == 3:
-        scores = scores.view(batch_size, -1)
-        mask = mask.view(batch_size, -1)
+        scores = scores.view(batch_size, -1) # type: ignore
+        mask = mask.view(batch_size, -1) # type: ignore
         log_probs = masked_log_softmax(scores, mask)
         log_probs = log_probs.view(batch_size, seq_length, seq_length)
         start_positions, end_positions = positions
@@ -80,7 +80,7 @@ def contrastive_loss(
         log_probs = log_probs[batch_indices, positions]
     if prob_mask is not None:
         log_probs = log_probs * prob_mask
-    return - log_probs.mean()
+    return - log_probs.mean() # type: ignore
 
 
 @dataclass
@@ -175,14 +175,14 @@ class Binder(PreTrainedModel):
 
     def forward(
         self,
-        input_ids: torch.LongTensor = None,
-        attention_mask: torch.Tensor = None,
-        token_type_ids: torch.Tensor = None,
-        type_input_ids: torch.LongTensor = None,
-        type_attention_mask: torch.Tensor = None,
-        type_token_type_ids: torch.Tensor = None,
-        ner: Optional[Dict] = None,
-        return_dict: bool = None,
+        input_ids: torch.LongTensor,
+        attention_mask: torch.Tensor,
+        token_type_ids: torch.Tensor,
+        type_input_ids: torch.LongTensor,
+        type_attention_mask: torch.Tensor,
+        type_token_type_ids: torch.Tensor,
+        ner: Optional[Dict],
+        return_dict: bool,
     ):
         return_dict = return_dict if return_dict is not None else self.hf_config.use_return_dict
 

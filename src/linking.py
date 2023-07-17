@@ -4,7 +4,6 @@ import torch
 from typing import TypedDict
 import os
 import logging
-from concurrent.futures import ThreadPoolExecutor
 import h5py
 import math
 
@@ -71,7 +70,7 @@ def load_umls_kb(umls_dir: str) -> list[UmlsRecord]:
     return umls_kb
 
 
-def encode_umls_kb(config, rebuild: bool = False, batch_size: int = BATCH_SIZE, save_interval: int = SAVE_INTERVAL):
+def encode_umls_kb(config, rebuild: bool = False, batch_size: int = BATCH_SIZE, save_interval: int = SAVE_INTERVAL, embeddings_file: str = UMLS_EMBEDDINGS_FILE) -> torch.Tensor:
     """
     Usage: umls_entities = encode_umls_kb(config, umls_kb) 
 
@@ -82,8 +81,8 @@ def encode_umls_kb(config, rebuild: bool = False, batch_size: int = BATCH_SIZE, 
         save_interval: Save embeddings to disk every `save_interval` batches
     """
     # load or build embeddings
-    if not rebuild and os.path.isfile(UMLS_EMBEDDINGS_FILE):
-        return load_embeddings_from_disk(UMLS_EMBEDDINGS_FILE, OUTPUT_DATASET)
+    if not rebuild and os.path.isfile(embeddings_file):
+        return load_embeddings_from_disk(embeddings_file, OUTPUT_DATASET)
 
     umls_kb = load_umls_kb(config.umls_dir)
 
@@ -94,7 +93,7 @@ def encode_umls_kb(config, rebuild: bool = False, batch_size: int = BATCH_SIZE, 
     # Encode each UMLS entity 
     umls_embeds = []
 
-    with h5py.File(UMLS_EMBEDDINGS_FILE, "w") as h5_file:
+    with h5py.File(embeddings_file, "w") as h5_file:
         for idx in range(0, math.ceil(len(umls_kb) / batch_size)):
             batch = idx * batch_size
             logger.info("Starting on batch %s", batch)
@@ -120,15 +119,15 @@ def encode_umls_kb(config, rebuild: bool = False, batch_size: int = BATCH_SIZE, 
                 logger.info("Encoded/saved %s UMLS entities (%s, %s)", (idx + 1) * batch_size, len(umls_embeds), embeds_tensor.shape)
                 save_embeddings_to_disk(h5_file, OUTPUT_DATASET, (idx + 1) * batch_size, embeds_tensor)
                 umls_embeds = []
+    h5_file.close()
 
-
-    umls_embeds = load_embeddings_from_disk(output_file, OUTPUT_DATASET)
+    umls_embeds = load_embeddings_from_disk(embeddings_file, OUTPUT_DATASET)
     logger.info("Encoded UMLS entities total: %s", len(umls_embeds))
 
     return umls_embeds
 
 
-def save_embeddings_to_disk(h5_file: str, dataset_name: str, start_index: int, embeddings):
+def save_embeddings_to_disk(h5_file: h5py.File, dataset_name: str, start_index: int, embeddings):
     """
     Save embeddings to disk
 
@@ -139,7 +138,10 @@ def save_embeddings_to_disk(h5_file: str, dataset_name: str, start_index: int, e
         embeddings: Embeddings to save
     """
     if dataset_name not in h5_file:
+        logger.info("Creating file %s or dataset %s", h5_file, dataset_name)
         h5_file.create_dataset(dataset_name, shape=(embeddings.size(0), embeddings.size(1)), dtype=float)
+    else:
+        logger.info("Appending to dataset %s", dataset_name)
 
     logger.info("From %s to %s", start_index - embeddings.size(0), start_index)
     h5_file[dataset_name][start_index - embeddings.size(0):start_index, :] = embeddings.detach().cpu().numpy()
