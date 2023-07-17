@@ -35,15 +35,5 @@ class BinderConfig(PretrainedConfig):
         self.span_loss_weight = span_loss_weight
         self.threshold_loss_weight = threshold_loss_weight
         self.ner_loss_weight = ner_loss_weight
-
-        self.max_span_width = max_span_width
-        self.use_span_width_embedding = use_span_width_embedding
-        self.linear_size = linear_size
-        self.init_temperature = init_temperature
-        self.start_loss_weight = start_loss_weight
-        self.end_loss_weight = end_loss_weight
-        self.span_loss_weight = span_loss_weight
-        self.threshold_loss_weight = threshold_loss_weight
-        self.ner_loss_weight = ner_loss_weight
-
+        self.link_loss_weight = link_loss_weight
         self.umls_dir = umls_dir
