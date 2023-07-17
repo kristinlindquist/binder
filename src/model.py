@@ -60,10 +60,10 @@ def masked_log_softmax(vector: torch.Tensor, mask: torch.BoolTensor, dim: int = 
 
 
 def contrastive_loss(
-    scores: torch.FloatTensor,
-    positions: Union[List[int], Tuple[List[int], List[int]]],
+    scores: Union[torch.FloatTensor, torch.Tensor],
+    positions: Union[int, Tuple[int], Tuple[List[int], List[int]]], # (0, 0)
     mask: torch.BoolTensor,
-    prob_mask: torch.BoolTensor,
+    prob_mask: Optional[torch.BoolTensor] = None,
 ) -> torch.FloatTensor:
     batch_size, seq_length = scores.size(0), scores.size(1)
     if len(scores.shape) == 3:
@@ -71,6 +71,10 @@ def contrastive_loss(
         mask = mask.view(batch_size, -1) # type: ignore
         log_probs = masked_log_softmax(scores, mask)
         log_probs = log_probs.view(batch_size, seq_length, seq_length)
+
+        if isinstance(positions, int) or len(positions) == 1:
+            raise ValueError("positions must be a tuple of two lists")
+
         start_positions, end_positions = positions
         batch_indices = list(range(batch_size))
         log_probs = log_probs[batch_indices, start_positions, end_positions]
@@ -86,12 +90,12 @@ def contrastive_loss(
 @dataclass
 class BinderModelOutput(ModelOutput):
 
-    loss: Optional[torch.FloatTensor] = None
-    start_scores: torch.FloatTensor = None
-    end_scores: torch.FloatTensor = None
-    span_scores: torch.FloatTensor = None
-    hidden_states: Optional[Tuple[torch.FloatTensor]] = None
-    attentions: Optional[Tuple[torch.FloatTensor]] = None
+    loss: Optional[torch.FloatTensor]
+    start_scores: Union[torch.FloatTensor, torch.Tensor]
+    end_scores: Union[torch.FloatTensor, torch.Tensor]
+    span_scores: Union[torch.FloatTensor, torch.Tensor]
+    hidden_states: Optional[Tuple[torch.FloatTensor]]
+    attentions: Optional[Tuple[torch.FloatTensor]]
 
 
 class Binder(PreTrainedModel):
@@ -229,7 +233,7 @@ class Binder(PreTrainedModel):
 
         # span_width_embeddings
         if self.width_embeddings is not None:
-            range_vector = torch.cuda.LongTensor(seq_length, device=sequence_output.device).fill_(1).cumsum(0) - 1
+            range_vector = torch.cuda.LongTensor(seq_length, device=sequence_output.device).fill_(1).cumsum(0) - 1 # type: ignore
             span_width = range_vector.unsqueeze(0) - range_vector.unsqueeze(1) + 1
             # seq_length x seq_length x hidden_size
             span_width_embeddings = self.width_embeddings(span_width * (span_width > 0))
@@ -248,7 +252,7 @@ class Binder(PreTrainedModel):
 
         # entity linking
         span_embs = outputs
-        linking_scores = self.linear(span_embs) @ self.umls_entities.T 
+        linking_scores = self.linear(span_embs) @ self.umls_entities.T  # type: ignore
         linking_scores = linking_scores.view(batch_size, num_types, seq_length, seq_length) # right?
     
         total_loss = None
@@ -262,7 +266,7 @@ class Binder(PreTrainedModel):
 
             start_threshold_loss = contrastive_loss(flat_start_scores, 0, start_negative_mask)
             end_threshold_loss = contrastive_loss(flat_end_scores, 0, end_negative_mask)
-            span_threshold_loss = contrastive_loss(flat_span_scores, (0, 0), span_negative_mask)
+            span_threshold_loss = contrastive_loss(flat_span_scores, (0, 0), span_negative_mask) # type: ignore
 
             threshold_loss = (
                 self.start_loss_weight * start_threshold_loss +

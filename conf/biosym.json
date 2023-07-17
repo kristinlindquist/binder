@@ -5,7 +5,7 @@
     "train_file": "data/genia/train.json",
     "validation_file": "data/genia/dev.json",
     "test_file": "data/genia/test.json",
-    "entity_type_file": "binder/entity_types.json",
+    "entity_type_file": "entity_types.json",
     "dataset_entity_types": ["compounds", "diseases", "mechanisms"],
     "report_to": "none",
     "max_seq_length": 128,

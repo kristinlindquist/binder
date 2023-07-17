@@ -6,7 +6,7 @@ import logging
 import os
 import sys
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import Any, Optional, List
 
 import datasets
 from datasets import load_dataset, DatasetDict
@@ -217,7 +217,13 @@ def main():
     # or by passing the --help flag to this script.
     # We now keep distinct sets of args, for a cleaner separation of concerns.
 
-    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
+    train_dataset = []
+    eval_dataset = []
+    eval_examples = []
+    predict_dataset = []
+    predict_examples = []
+
+    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments)) # type: ignore
     if sys.argv[-1].endswith(".json"):
         # If we pass only one argument to the script and it's the path to a json file,
         # let's parse it to get our arguments.
@@ -294,7 +300,7 @@ def main():
     if not extension:
         raise ValueError("no file extension detected.")
 
-    raw_datasets: DatasetDict = load_dataset(extension, data_files=data_files, cache_dir=model_args.cache_dir)
+    raw_datasets: DatasetDict = load_dataset(extension, data_files=data_files, cache_dir=model_args.cache_dir) # type: ignore
     # See more about loading any type of standard or custom dataset (from files, python dict, pandas DataFrame, etc) at
     # https://huggingface.co/docs/datasets/loading_datasets.html.
 
@@ -374,7 +380,7 @@ def main():
         return tokenized_examples
 
     with training_args.main_process_first(desc="Tokenizing entity type descriptions"):
-        tokenized_descriptions = entity_type_knowledge.map(
+        tokenized_descriptions: Any = entity_type_knowledge.map(
             prepare_type_features,
             batched=True,
             load_from_cache_file=not data_args.overwrite_cache,
@@ -396,7 +402,7 @@ def main():
         # Tokenize our examples with truncation and maybe padding, but keep the overflows using a stride. This results
         # in one example possible giving several features when a context is long, each of those features having a
         # context that overlaps a bit the context of the previous feature.
-        tokenized_examples = tokenizer(
+        tokenized_examples: Any = tokenizer(
             examples["text"],
             truncation=True,
             max_length=max_seq_length,
@@ -528,7 +534,6 @@ def main():
         return processed_examples
 
     if training_args.do_train:
-
         if "train" not in raw_datasets:
             raise ValueError("--do_train requires a train dataset")
         train_dataset = raw_datasets["train"]
@@ -551,7 +556,7 @@ def main():
         # Tokenize our examples with truncation and maybe padding, but keep the overflows using a stride. This results
         # in one example possible giving several features when a context is long, each of those features having a
         # context that overlaps a bit the context of the previous feature.
-        tokenized_examples = tokenizer(
+        tokenized_examples: Any = tokenizer(
             examples["text"],
             truncation=True,
             max_length=max_seq_length,
@@ -718,7 +723,7 @@ def main():
     if training_args.do_predict:
         logger.info("*** Predict ***")
         results = trainer.predict(predict_dataset, predict_examples)
-        metrics = results.metrics
+        metrics = results.metrics or {}
 
         max_predict_samples = (
             data_args.max_predict_samples if data_args.max_predict_samples is not None else len(predict_dataset)

@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List, Dict, Union
+from typing import Any, List, Dict, Optional, Union
 from dataclasses import dataclass
 
 import torch
@@ -24,7 +24,7 @@ class Span:
 class BinderDataCollator:
     type_input_ids: torch.Tensor
     type_attention_mask: torch.Tensor
-    type_token_type_ids: torch.Tensor
+    type_token_type_ids: Optional[torch.Tensor]
 
     def __post_init__(self):
         self.type_input_ids = torch.tensor(self.type_input_ids)

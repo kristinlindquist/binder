@@ -5,7 +5,6 @@ import json
 import copy
 from typing import Optional, Tuple, List, Dict, Set
 from dataclasses import dataclass
-
 import numpy as np
 
 
@@ -360,7 +359,7 @@ def error_analysis(annotations: Set[Annotation], predictions: Set[Annotation], e
         fn_counter = collections.Counter([x.text for x in fn if x.entity_type == t])
         fp_patterns = '|'.join(sorted(set([k.lower() for k, _ in fp_counter.most_common(10)])))
         ret.update({
-            t: {
+            t: { # type: ignore
                 "most-common fp patterns": fp_patterns,
                 "most-common fp errors": {k: v for k, v in fp_counter.most_common(10)},
                 "most-common fn errors": {k: v for k, v in fn_counter.most_common(10)},

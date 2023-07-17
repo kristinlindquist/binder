@@ -11,8 +11,8 @@ UmlsRecord = TypedDict("UmlsRecord", {"cui": str, "name": str, "description": st
 
 UMLS_EMBEDDINGS_FILE = "umls_embeds.h5"
 OUTPUT_DATASET = "embeddings"
-BATCH_SIZE = 32
-SAVE_INTERVAL = 100 # Save embeddings every 100 batches
+BATCH_SIZE = 100
+SAVE_INTERVAL = 10 # Save embeddings every 100 batches
 
 logger = logging.getLogger(__name__)
 logger.setLevel("INFO")
@@ -118,7 +118,7 @@ def encode_umls_kb(config, rebuild: bool = False, batch_size: int = BATCH_SIZE, 
                 embeds_tensor = torch.stack(umls_embeds, dim=0)
                 logger.info("Encoded/saved %s UMLS entities (%s, %s)", (idx + 1) * batch_size, len(umls_embeds), embeds_tensor.shape)
                 save_embeddings_to_disk(h5_file, OUTPUT_DATASET, (idx + 1) * batch_size, embeds_tensor)
-                umls_embeds = []
+                umls_embeds.clear()
     h5_file.close()
 
     umls_embeds = load_embeddings_from_disk(embeddings_file, OUTPUT_DATASET)
@@ -144,7 +144,7 @@ def save_embeddings_to_disk(h5_file: h5py.File, dataset_name: str, start_index: 
         logger.info("Appending to dataset %s", dataset_name)
 
     logger.info("From %s to %s", start_index - embeddings.size(0), start_index)
-    h5_file[dataset_name][start_index - embeddings.size(0):start_index, :] = embeddings.detach().cpu().numpy()
+    h5_file[dataset_name][start_index - embeddings.size(0):start_index, :] = embeddings.detach().cpu().numpy() # type: ignore
 
 def load_embeddings_from_disk(file_path: str, dataset_name: str):
     """
@@ -155,5 +155,5 @@ def load_embeddings_from_disk(file_path: str, dataset_name: str):
         dataset_name: Name of dataset from which to load embeddings
     """
     with h5py.File(file_path, "r") as h5_file:
-        embeddings = h5_file[dataset_name][:]
+        embeddings = h5_file[dataset_name][:] # type: ignore
     return torch.tensor(embeddings)
