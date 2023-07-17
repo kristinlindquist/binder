@@ -7,6 +7,8 @@ import numpy as np
 from transformers import PreTrainedModel, AutoModel, AutoConfig
 from transformers.file_utils import ModelOutput
 
+from .linking import load_umls_kb
+
 
 def tiny_value_of_dtype(dtype: torch.dtype):
     """
