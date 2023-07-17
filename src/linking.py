@@ -22,6 +22,7 @@ def get_definition(cui, source, def_filename):
 UmlsRecord = TypedDict("UmlsRecord", {"cui": str, "name": str, "description": str })
 
 def load_umls_kb(umls_dir: str) -> list[UmlsRecord]:
+    logger.info("Loaded UMLS entities from %s", umls_dir)
     term_filename, def_filename = [os.path.join(umls_dir, filename) for filename in ['MRCONSO.RRF', 'MRDEF.RRF']]
     with open(term_filename, 'r') as f:
         # get lines that are English, preferred
@@ -40,7 +41,7 @@ def load_umls_kb(umls_dir: str) -> list[UmlsRecord]:
             'name': name,
             'description': get_definition(cui, source, def_filename)
         })
-    logger.info("Loaded %s UMLS entities", len(umls_kb))
+    logger.info("Loaded %s UMLS entities, latest: %s", len(umls_kb), umls_kb[-1])
 
 def encode_umls_kb(config, umls_kb):
     """
