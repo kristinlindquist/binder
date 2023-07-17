@@ -35,5 +35,5 @@
     "evaluation_strategy": "steps",
     "eval_steps": 100,
     "do_predict": true,
-    "output_dir": "/content/drive/MyDrive/binder/biosym"
+    "output_dir": "/tmp/biosym"
 }
