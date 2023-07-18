@@ -1,0 +1,45 @@
+name: umls-compounds-diseases-mechanisms
+
+dict:
+  umls:
+    lang: 
+      - en
+    meta_path: ${oc.env:UMLS_HOME}/2023AA/META
+    version: 2023AA
+    semantic_types:
+      - T019
+      - T033
+      - T037
+      - T046
+      - T048
+      - T109
+      - T114
+      - T116
+      - T121
+      - T123
+      - T125
+      - T126
+      - T127
+      - T129
+      - T184
+      - T191
+      - T195
+    sabs:
+      - CPT
+      - FMA
+      - GO
+      - HGNC
+      - HPO
+      - ICD10
+      - ICD10CM
+      - ICD9CM
+      - MDR
+      - MSH
+      - MTH
+      - NCBI
+      - NCI
+      - NDDF
+      - NDFRT
+      - OMIM
+      - RXNORM
+      - SNOMEDCT_US

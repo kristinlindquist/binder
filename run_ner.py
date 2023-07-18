@@ -333,7 +333,7 @@ def main():
         span_loss_weight=model_args.span_loss_weight,
         threshold_loss_weight=model_args.threshold_loss_weight,
         ner_loss_weight=model_args.ner_loss_weight,
-        umls_dir=model_args.umls_dir,
+        index_file=model_args.index_file,
     )
     model = Binder(config)
 

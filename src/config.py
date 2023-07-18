@@ -19,7 +19,7 @@ class BinderConfig(PretrainedConfig):
         threshold_loss_weight=0.5,
         ner_loss_weight=0.5,
         link_loss_weight=0.5,
-        umls_dir="/tmp/umls",
+        index_file="./umls.index",
     ):
         self.pretrained_model_name_or_path=pretrained_model_name_or_path
         self.cache_dir=cache_dir
@@ -36,4 +36,4 @@ class BinderConfig(PretrainedConfig):
         self.threshold_loss_weight = threshold_loss_weight
         self.ner_loss_weight = ner_loss_weight
         self.link_loss_weight = link_loss_weight
-        self.umls_dir = umls_dir
+        self.index_file = index_file

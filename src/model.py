@@ -7,12 +7,10 @@ import numpy as np
 from transformers import PreTrainedModel, AutoModel, AutoConfig
 from transformers.file_utils import ModelOutput
 import logging
+import faiss
 
 logger = logging.getLogger(__name__)
 logger.setLevel("INFO")
-
-from .linking import encode_umls_kb
-
 
 def tiny_value_of_dtype(dtype: torch.dtype):
     """
@@ -104,8 +102,6 @@ class Binder(PreTrainedModel):
         logger.info("Initing Binder")
         super().__init__(config)
 
-        self.umls_entities = encode_umls_kb(config)
-
         hf_config = AutoConfig.from_pretrained(
             pretrained_model_name_or_path=config.pretrained_model_name_or_path,
             cache_dir=config.cache_dir,
@@ -139,7 +135,7 @@ class Binder(PreTrainedModel):
         self.ner_loss_weight = config.ner_loss_weight
 
         # for entity linking
-        self.umls_dir = config.umls_dir
+        self.umls_index = faiss.read_index(config.index_file)
         self.link_linear = torch.nn.Linear(hf_config.hidden_size, config.linear_size)
         self.link_loss_weight = config.link_loss_weight
 
@@ -252,9 +248,15 @@ class Binder(PreTrainedModel):
 
         # entity linking
         span_embs = outputs
-        linking_scores = self.linear(span_embs) @ self.umls_entities.T  # type: ignore
-        linking_scores = linking_scores.view(batch_size, num_types, seq_length, seq_length) # right?
-    
+
+        ## UNTESTED
+        # load faiss index
+        top_knn = 1
+        possible_umls_matches = self.umls_index.search(span_embs, top_knn)[1]
+        # put matches into tensor
+        linking_scores = possible_umls_matches.view(batch_size, num_types, seq_length, seq_length) # right?
+        logging.info("Linking scores: %s", linking_scores)
+
         total_loss = None
         if ner is not None:
             flat_start_scores = start_scores.view(batch_size * num_types, seq_length)

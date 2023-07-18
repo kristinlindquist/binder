@@ -43,6 +43,11 @@ python run_ner.py conf/ace05.json
 
 To run experiments on other datasets, simply change the config.
 
+## Biosym specific stuff
+
+- xmen dict conf/umls.yaml 
+- xmen index conf/sapbert_link.yaml --sapbert
+
 ## Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a

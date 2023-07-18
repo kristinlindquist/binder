@@ -1,0 +1,5 @@
+name: umls-compounds-diseases-mechanisms
+linker:
+  candidate_generation:
+    sapbert:
+      model_name: cambridgeltl/SapBERT-from-PubMedBERT-fulltext
