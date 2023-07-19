@@ -214,7 +214,10 @@ class Binder(PreTrainedModel):
 
         # span_width_embeddings
         if self.width_embeddings is not None:
-            range_vector = torch.cuda.LongTensor(seq_length, device=sequence_output.device).fill_(1).cumsum(0) - 1
+            if torch.cuda.is_available():
+                range_vector = torch.cuda.LongTensor(seq_length, device=sequence_output.device).fill_(1).cumsum(0) - 1
+            else:
+                range_vector = torch.arange(seq_length, device=sequence_output.device).fill_(1).cumsum(0) - 1
             span_width = range_vector.unsqueeze(0) - range_vector.unsqueeze(1) + 1
             # seq_length x seq_length x hidden_size
             span_width_embeddings = self.width_embeddings(span_width * (span_width > 0))
