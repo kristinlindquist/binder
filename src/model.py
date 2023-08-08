@@ -76,6 +76,20 @@ def contrastive_loss(
         log_probs = log_probs * prob_mask
     return - log_probs.mean()
 
+def l2reg_contrastive_loss(
+    parameters: list[torch.nn.Parameter],
+    scores: torch.FloatTensor,
+    positions: Union[List[int], Tuple[List[int], List[int]]],
+    mask: torch.BoolTensor,
+    prob_mask: torch.BoolTensor = None,
+    lambda_l2: float = 0.01,
+) -> torch.FloatTensor:
+    c_loss = contrastive_loss(scores, positions, mask, prob_mask)
+    # Add L2 regularization
+    l2_reg = sum(p.pow(2.0).sum() for p in parameters)
+    total_loss = c_loss + lambda_l2 * l2_reg
+    return loss
+
 
 @dataclass
 class BinderModelOutput(ModelOutput):
@@ -243,9 +257,9 @@ class Binder(PreTrainedModel):
             end_negative_mask = ner["end_negative_mask"].view(batch_size * num_types, seq_length)
             span_negative_mask = ner["span_negative_mask"].view(batch_size * num_types, seq_length, seq_length)
 
-            start_threshold_loss = contrastive_loss(flat_start_scores, 0, start_negative_mask)
-            end_threshold_loss = contrastive_loss(flat_end_scores, 0, end_negative_mask)
-            span_threshold_loss = contrastive_loss(flat_span_scores, (0, 0), span_negative_mask)
+            start_threshold_loss = l2reg_contrastive_loss(self.parameters(), flat_start_scores, 0, start_negative_mask)
+            end_threshold_loss = l2reg_contrastive_loss(self.parameters(), flat_end_scores, 0, end_negative_mask)
+            span_threshold_loss = l2reg_contrastive_loss(self.parameters(), flat_span_scores, (0, 0), span_negative_mask)
 
             threshold_loss = (
                 self.start_loss_weight * start_threshold_loss +
@@ -258,9 +272,9 @@ class Binder(PreTrainedModel):
             ner_start_masks, ner_end_masks = ner["example_start_masks"], ner["example_end_masks"]
             ner_span_masks = ner["example_span_masks"]
 
-            start_loss = contrastive_loss(start_scores[ner_indices], ner_starts, ner_start_masks)
-            end_loss = contrastive_loss(end_scores[ner_indices], ner_ends, ner_end_masks)
-            span_loss = contrastive_loss(span_scores[ner_indices], (ner_starts, ner_ends), ner_span_masks)
+            start_loss = l2reg_contrastive_loss(self.parameters(), start_scores[ner_indices], ner_starts, ner_start_masks)
+            end_loss = l2reg_contrastive_loss(self.parameters(), end_scores[ner_indices], ner_ends, ner_end_masks)
+            span_loss = l2reg_contrastive_loss(self.parameters(), span_scores[ner_indices], (ner_starts, ner_ends), ner_span_masks)
 
             total_loss = (
                 self.start_loss_weight * start_loss +
