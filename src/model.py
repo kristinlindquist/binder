@@ -25,7 +25,9 @@ def tiny_value_of_dtype(dtype: torch.dtype):
         raise TypeError("Does not support dtype " + str(dtype))
 
 
-def masked_log_softmax(vector: torch.Tensor, mask: torch.BoolTensor, dim: int = -1) -> torch.Tensor:
+def masked_log_softmax(
+    vector: torch.Tensor, mask: torch.BoolTensor, dim: int = -1
+) -> torch.Tensor:
     """
     `torch.nn.functional.log_softmax(vector)` does not work if some elements of `vector` should be
     masked.  This performs a log_softmax on just the non-masked portions of `vector`.  Passing
@@ -74,7 +76,8 @@ def contrastive_loss(
         log_probs = log_probs[batch_indices, positions]
     if prob_mask is not None:
         log_probs = log_probs * prob_mask
-    return - log_probs.mean()
+    return -log_probs.mean()
+
 
 def l2reg_contrastive_loss(
     parameters: list[torch.nn.Parameter],
@@ -84,6 +87,9 @@ def l2reg_contrastive_loss(
     prob_mask: torch.BoolTensor = None,
     lambda_l2: float = 0.001,
 ) -> torch.FloatTensor:
+    """
+    Computes the contrastive loss with L2 regularization.
+    """
     c_loss = contrastive_loss(scores, positions, mask, prob_mask)
     # Add L2 regularization
     l2_reg = sum(p.pow(2.0).sum() for p in parameters)
@@ -93,7 +99,6 @@ def l2reg_contrastive_loss(
 
 @dataclass
 class BinderModelOutput(ModelOutput):
-
     loss: Optional[torch.FloatTensor] = None
     start_scores: torch.FloatTensor = None
     end_scores: torch.FloatTensor = None
@@ -103,7 +108,6 @@ class BinderModelOutput(ModelOutput):
 
 
 class Binder(PreTrainedModel):
-
     def __init__(self, config):
         super().__init__(config)
 
@@ -117,20 +121,38 @@ class Binder(PreTrainedModel):
         self.hf_config = hf_config
         self.config.pruned_heads = hf_config.pruned_heads
         self.dropout = torch.nn.Dropout(hf_config.hidden_dropout_prob)
-        self.type_start_linear = torch.nn.Linear(hf_config.hidden_size, config.linear_size)
-        self.type_end_linear = torch.nn.Linear(hf_config.hidden_size, config.linear_size)
-        self.type_span_linear = torch.nn.Linear(hf_config.hidden_size, config.linear_size)
+        self.type_start_linear = torch.nn.Linear(
+            hf_config.hidden_size, config.linear_size
+        )
+        self.type_end_linear = torch.nn.Linear(
+            hf_config.hidden_size, config.linear_size
+        )
+        self.type_span_linear = torch.nn.Linear(
+            hf_config.hidden_size, config.linear_size
+        )
         self.start_linear = torch.nn.Linear(hf_config.hidden_size, config.linear_size)
         self.end_linear = torch.nn.Linear(hf_config.hidden_size, config.linear_size)
         if config.use_span_width_embedding:
-            self.span_linear = torch.nn.Linear(hf_config.hidden_size * 2 + config.linear_size, config.linear_size)
-            self.width_embeddings = torch.nn.Embedding(config.max_span_width, config.linear_size, padding_idx=0)
+            self.span_linear = torch.nn.Linear(
+                hf_config.hidden_size * 2 + config.linear_size, config.linear_size
+            )
+            self.width_embeddings = torch.nn.Embedding(
+                config.max_span_width, config.linear_size, padding_idx=0
+            )
         else:
-            self.span_linear = torch.nn.Linear(hf_config.hidden_size * 2, config.linear_size)
+            self.span_linear = torch.nn.Linear(
+                hf_config.hidden_size * 2, config.linear_size
+            )
             self.width_embeddings = None
-        self.start_logit_scale = torch.nn.Parameter(torch.ones([]) * np.log(1 / config.init_temperature))
-        self.end_logit_scale = torch.nn.Parameter(torch.ones([]) * np.log(1 / config.init_temperature))
-        self.span_logit_scale = torch.nn.Parameter(torch.ones([]) * np.log(1 / config.init_temperature))
+        self.start_logit_scale = torch.nn.Parameter(
+            torch.ones([]) * np.log(1 / config.init_temperature)
+        )
+        self.end_logit_scale = torch.nn.Parameter(
+            torch.ones([]) * np.log(1 / config.init_temperature)
+        )
+        self.span_logit_scale = torch.nn.Parameter(
+            torch.ones([]) * np.log(1 / config.init_temperature)
+        )
 
         self.start_loss_weight = config.start_loss_weight
         self.end_loss_weight = config.end_loss_weight
@@ -144,12 +166,12 @@ class Binder(PreTrainedModel):
         self.text_encoder = AutoModel.from_pretrained(
             config.pretrained_model_name_or_path,
             config=hf_config,
-            add_pooling_layer=False
+            add_pooling_layer=False,
         )
         self.type_encoder = AutoModel.from_pretrained(
             config.pretrained_model_name_or_path,
             config=hf_config,
-            add_pooling_layer=False
+            add_pooling_layer=False,
         )
 
     def _init_weights(self, module):
@@ -183,7 +205,9 @@ class Binder(PreTrainedModel):
         ner: Optional[Dict] = None,
         return_dict: bool = None,
     ):
-        return_dict = return_dict if return_dict is not None else self.hf_config.use_return_dict
+        return_dict = (
+            return_dict if return_dict is not None else self.hf_config.use_return_dict
+        )
 
         outputs = self.text_encoder(
             input_ids,
@@ -197,7 +221,9 @@ class Binder(PreTrainedModel):
         type_outputs = self.type_encoder(
             type_input_ids.squeeze(0),
             attention_mask=type_attention_mask.squeeze(0),
-            token_type_ids=type_token_type_ids.squeeze(0) if type_token_type_ids is not None else None,
+            token_type_ids=type_token_type_ids.squeeze(0)
+            if type_token_type_ids is not None
+            else None,
             return_dict=return_dict,
         )
         # num_types x hidden_size
@@ -207,15 +233,31 @@ class Binder(PreTrainedModel):
         num_types, _ = type_output.size()
 
         # num_types x hidden_size
-        type_start_output = F.normalize(self.dropout(self.type_start_linear(type_output)), dim=-1)
-        type_end_output = F.normalize(self.dropout(self.type_end_linear(type_output)), dim=-1)
+        type_start_output = F.normalize(
+            self.dropout(self.type_start_linear(type_output)), dim=-1
+        )
+        type_end_output = F.normalize(
+            self.dropout(self.type_end_linear(type_output)), dim=-1
+        )
         # batch_size x seq_length x hidden_size
-        sequence_start_output = F.normalize(self.dropout(self.start_linear(sequence_output)), dim=-1)
-        sequence_end_output = F.normalize(self.dropout(self.end_linear(sequence_output)), dim=-1)
+        sequence_start_output = F.normalize(
+            self.dropout(self.start_linear(sequence_output)), dim=-1
+        )
+        sequence_end_output = F.normalize(
+            self.dropout(self.end_linear(sequence_output)), dim=-1
+        )
 
         # batch_size x num_types x seq_length
-        start_scores = self.start_logit_scale.exp() * type_start_output.unsqueeze(0) @ sequence_start_output.transpose(1, 2)
-        end_scores = self.end_logit_scale.exp() * type_end_output.unsqueeze(0) @ sequence_end_output.transpose(1, 2)
+        start_scores = (
+            self.start_logit_scale.exp()
+            * type_start_output.unsqueeze(0)
+            @ sequence_start_output.transpose(1, 2)
+        )
+        end_scores = (
+            self.end_logit_scale.exp()
+            * type_end_output.unsqueeze(0)
+            @ sequence_end_output.transpose(1, 2)
+        )
 
         # batch_size x seq_length x seq_length x hidden_size*2
         span_output = torch.cat(
@@ -223,66 +265,122 @@ class Binder(PreTrainedModel):
                 sequence_output.unsqueeze(2).expand(-1, -1, seq_length, -1),
                 sequence_output.unsqueeze(1).expand(-1, seq_length, -1, -1),
             ],
-            dim=3
+            dim=3,
         )
 
         # span_width_embeddings
         if self.width_embeddings is not None:
             if torch.cuda.is_available():
-                range_vector = torch.cuda.LongTensor(seq_length, device=sequence_output.device).fill_(1).cumsum(0) - 1
+                range_vector = (
+                    torch.cuda.LongTensor(seq_length, device=sequence_output.device)
+                    .fill_(1)
+                    .cumsum(0)
+                    - 1
+                )
             else:
-                range_vector = torch.arange(seq_length, device=sequence_output.device).fill_(1).cumsum(0) - 1
+                range_vector = (
+                    torch.arange(seq_length, device=sequence_output.device)
+                    .fill_(1)
+                    .cumsum(0)
+                    - 1
+                )
             span_width = range_vector.unsqueeze(0) - range_vector.unsqueeze(1) + 1
             # seq_length x seq_length x hidden_size
             span_width_embeddings = self.width_embeddings(span_width * (span_width > 0))
-            span_output = torch.cat([
-                span_output, span_width_embeddings.unsqueeze(0).expand(batch_size, -1, -1, -1)], dim=3)
+            span_output = torch.cat(
+                [
+                    span_output,
+                    span_width_embeddings.unsqueeze(0).expand(batch_size, -1, -1, -1),
+                ],
+                dim=3,
+            )
 
         # batch_size x seq_length x seq_length x hidden_size
         span_linear_output = F.normalize(
-            self.dropout(self.span_linear(span_output)).view(batch_size, seq_length * seq_length, -1), dim=-1
+            self.dropout(self.span_linear(span_output)).view(
+                batch_size, seq_length * seq_length, -1
+            ),
+            dim=-1,
         )
         # num_types x hidden_size
-        type_linear_output = F.normalize(self.dropout(self.type_span_linear(type_output)), dim=-1)
+        type_linear_output = F.normalize(
+            self.dropout(self.type_span_linear(type_output)), dim=-1
+        )
 
-        span_scores = self.span_logit_scale.exp() * type_linear_output.unsqueeze(0) @ span_linear_output.transpose(1, 2)
+        span_scores = (
+            self.span_logit_scale.exp()
+            * type_linear_output.unsqueeze(0)
+            @ span_linear_output.transpose(1, 2)
+        )
         span_scores = span_scores.view(batch_size, num_types, seq_length, seq_length)
 
         total_loss = None
         if ner is not None:
             flat_start_scores = start_scores.view(batch_size * num_types, seq_length)
             flat_end_scores = end_scores.view(batch_size * num_types, seq_length)
-            flat_span_scores = span_scores.view(batch_size * num_types, seq_length, seq_length)
-            start_negative_mask = ner["start_negative_mask"].view(batch_size * num_types, seq_length)
-            end_negative_mask = ner["end_negative_mask"].view(batch_size * num_types, seq_length)
-            span_negative_mask = ner["span_negative_mask"].view(batch_size * num_types, seq_length, seq_length)
+            flat_span_scores = span_scores.view(
+                batch_size * num_types, seq_length, seq_length
+            )
+            start_negative_mask = ner["start_negative_mask"].view(
+                batch_size * num_types, seq_length
+            )
+            end_negative_mask = ner["end_negative_mask"].view(
+                batch_size * num_types, seq_length
+            )
+            span_negative_mask = ner["span_negative_mask"].view(
+                batch_size * num_types, seq_length, seq_length
+            )
 
-            start_threshold_loss = l2reg_contrastive_loss(self.parameters(), flat_start_scores, 0, start_negative_mask)
-            end_threshold_loss = l2reg_contrastive_loss(self.parameters(), flat_end_scores, 0, end_negative_mask)
-            span_threshold_loss = l2reg_contrastive_loss(self.parameters(), flat_span_scores, (0, 0), span_negative_mask)
+            start_threshold_loss = l2reg_contrastive_loss(
+                self.parameters(), flat_start_scores, 0, start_negative_mask
+            )
+            end_threshold_loss = l2reg_contrastive_loss(
+                self.parameters(), flat_end_scores, 0, end_negative_mask
+            )
+            span_threshold_loss = l2reg_contrastive_loss(
+                self.parameters(), flat_span_scores, (0, 0), span_negative_mask
+            )
 
             threshold_loss = (
-                self.start_loss_weight * start_threshold_loss +
-                self.end_loss_weight * end_threshold_loss +
-                self.span_loss_weight * span_threshold_loss
+                self.start_loss_weight * start_threshold_loss
+                + self.end_loss_weight * end_threshold_loss
+                + self.span_loss_weight * span_threshold_loss
             )
 
             ner_indices = ner["example_indices"]
             ner_starts, ner_ends = ner["example_starts"], ner["example_ends"]
-            ner_start_masks, ner_end_masks = ner["example_start_masks"], ner["example_end_masks"]
+            ner_start_masks, ner_end_masks = (
+                ner["example_start_masks"],
+                ner["example_end_masks"],
+            )
             ner_span_masks = ner["example_span_masks"]
 
-            start_loss = l2reg_contrastive_loss(self.parameters(), start_scores[ner_indices], ner_starts, ner_start_masks)
-            end_loss = l2reg_contrastive_loss(self.parameters(), end_scores[ner_indices], ner_ends, ner_end_masks)
-            span_loss = l2reg_contrastive_loss(self.parameters(), span_scores[ner_indices], (ner_starts, ner_ends), ner_span_masks)
-
-            total_loss = (
-                self.start_loss_weight * start_loss +
-                self.end_loss_weight * end_loss +
-                self.span_loss_weight * span_loss
+            start_loss = l2reg_contrastive_loss(
+                self.parameters(),
+                start_scores[ner_indices],
+                ner_starts,
+                ner_start_masks,
+            )
+            end_loss = l2reg_contrastive_loss(
+                self.parameters(), end_scores[ner_indices], ner_ends, ner_end_masks
+            )
+            span_loss = l2reg_contrastive_loss(
+                self.parameters(),
+                span_scores[ner_indices],
+                (ner_starts, ner_ends),
+                ner_span_masks,
             )
 
-            total_loss = self.ner_loss_weight * total_loss + self.threshold_loss_weight * threshold_loss
+            total_loss = (
+                self.start_loss_weight * start_loss
+                + self.end_loss_weight * end_loss
+                + self.span_loss_weight * span_loss
+            )
+
+            total_loss = (
+                self.ner_loss_weight * total_loss
+                + self.threshold_loss_weight * threshold_loss
+            )
 
         if not return_dict:
             output = (start_scores, end_scores, span_scores) + outputs[2:]
