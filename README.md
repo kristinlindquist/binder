@@ -50,6 +50,7 @@ model = Binder(BinderConfig(**config))
 model.load_state_dict(torch.load('/tmp/pytorch_model.bin', map_location=torch.device('mps')))
 torch.save(model, 'model.pt')
 ```
+
 ## Quick Start
 ### 1. Data Preparation
 
