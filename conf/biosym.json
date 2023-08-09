@@ -32,8 +32,7 @@
     "save_steps": 100,
     "save_total_limit": 1,
     "do_eval": true,
-    "evaluation_strategy": "steps",
-    "eval_steps": 100,
+    "evaluation_strategy": "epoch",
     "do_predict": true,
     "output_dir": "/tmp/biosym"
 }
