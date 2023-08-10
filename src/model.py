@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import numpy as np
 from transformers import PreTrainedModel, AutoModel, AutoConfig
 from transformers.file_utils import ModelOutput
+import logging
 
 logger = logging.getLogger(__name__)
 
