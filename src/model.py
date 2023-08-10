@@ -98,12 +98,13 @@ def l2reg_contrastive_loss(
     l2_reg = sum(p.pow(2.0).sum() for p in parameters)
     total_loss = c_loss + lambda_l2 * l2_reg
 
-    if c_loss.mean().item() < (lambda_l2 * l2_reg * 5).mean().item():
-        logger.warning(
-            "l2 reg loss (%s) is pretty big compared to contrastive loss (%s).",
-            (lambda_l2 * l2_reg * 5).mean().item(),
-            c_loss.mean().item(),
-        )
+    # slow?
+    # if c_loss.mean().item() < (lambda_l2 * l2_reg * 5).mean().item():
+    #     logger.warning(
+    #         "l2 reg loss (%s) is pretty big compared to contrastive loss (%s).",
+    #         (lambda_l2 * l2_reg * 5).mean().item(),
+    #         c_loss.mean().item(),
+    #     )
     return total_loss
 
 
