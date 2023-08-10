@@ -88,7 +88,7 @@ def l2reg_contrastive_loss(
     positions: Union[List[int], Tuple[List[int], List[int]]],
     mask: torch.BoolTensor,
     prob_mask: torch.BoolTensor = None,
-    lambda_l2: float = 0.0001,
+    lambda_l2: float = 0.0000001,
 ) -> torch.FloatTensor:
     """
     Computes the contrastive loss with L2 regularization.
