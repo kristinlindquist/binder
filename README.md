@@ -20,6 +20,36 @@ If you find our code is useful, please cite:
 }
 ```
 
+## Biosym Info
+
+### Generating model for inference
+```
+config = {
+    "cache_dir": "",
+    "end_loss_weight": 0.2,
+    "hidden_dropout_prob": 0.1,
+    "init_temperature": 0.07,
+    "linear_size": 128,
+    "max_span_width": 129,
+    "ner_loss_weight": 0.5,
+    "pretrained_model_name_or_path": "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract",
+    "revision": "main",
+    "span_loss_weight": 0.6,
+    "start_loss_weight": 0.2,
+    "threshold_loss_weight": 0.5,
+    "use_auth_token": False,
+    "use_span_width_embedding": True
+}
+
+import torch, sys
+sys.path.append("src")
+torch.device('mps')
+from model import Binder
+from config import BinderConfig
+model = Binder(BinderConfig(**config))
+model.load_state_dict(torch.load('/tmp/pytorch_model.bin', map_location=torch.device('mps')))
+torch.save(model, 'model.pt')
+```
 
 ## Quick Start
 ### 1. Data Preparation
