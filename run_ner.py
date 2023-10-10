@@ -482,6 +482,9 @@ def main():
 
                     entity_type_id = entity_type_str_to_id[entity_type]
 
+                    if entity_type_id is None:
+                        continue
+
                     # Inclusive start and end.
                     tokenized_ner_annotations.append({
                         "type_id": entity_type_id,
