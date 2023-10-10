@@ -480,7 +480,7 @@ def main():
                         end_token_index -= 1
                     end_token_index += 1
 
-                    entity_type_id = entity_type_str_to_id[entity_type]
+                    entity_type_id = entity_type_str_to_id.get(entity_type)
 
                     if entity_type_id is None:
                         continue
