@@ -374,7 +374,7 @@ def main():
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = Binder(config)
-    model = nn.DataParallel(model)
+    model = torch.nn.DataParallel(model)
     model.to(device)
 
     # Tokenizer check: this script requires a fast tokenizer.
