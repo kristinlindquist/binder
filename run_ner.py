@@ -38,21 +38,33 @@ class ModelArguments:
     """
 
     model_name_or_path: str = field(
-        metadata={"help": "Path to pretrained model or model identifier from huggingface.co/models"}
+        metadata={
+            "help": "Path to pretrained model or model identifier from huggingface.co/models"
+        }
     )
     config_name: Optional[str] = field(
-        default=None, metadata={"help": "Pretrained config name or path if not the same as model_name"}
+        default=None,
+        metadata={
+            "help": "Pretrained config name or path if not the same as model_name"
+        },
     )
     tokenizer_name: Optional[str] = field(
-        default=None, metadata={"help": "Pretrained tokenizer name or path if not the same as model_name"}
+        default=None,
+        metadata={
+            "help": "Pretrained tokenizer name or path if not the same as model_name"
+        },
     )
     cache_dir: Optional[str] = field(
         default=None,
-        metadata={"help": "Path to directory to store the pretrained models downloaded from huggingface.co"},
+        metadata={
+            "help": "Path to directory to store the pretrained models downloaded from huggingface.co"
+        },
     )
     model_revision: str = field(
         default="main",
-        metadata={"help": "The specific model version to use (can be a branch name, tag name or commit id)."},
+        metadata={
+            "help": "The specific model version to use (can be a branch name, tag name or commit id)."
+        },
     )
     use_auth_token: bool = field(
         default=False,
@@ -71,7 +83,8 @@ class ModelArguments:
         default=128, metadata={"help": "Size of the last linear layer."}
     )
     init_temperature: float = field(
-        default=0.07, metadata={"help": "Init value of temperature used in contrastive loss."}
+        default=0.07,
+        metadata={"help": "Init value of temperature used in contrastive loss."},
     )
     start_loss_weight: float = field(
         default=0.2, metadata={"help": "NER span start loss weight."}
@@ -85,9 +98,7 @@ class ModelArguments:
     threshold_loss_weight: float = field(
         default=0.5, metadata={"help": "NER threshold loss weight."}
     )
-    ner_loss_weight: float = field(
-        default=0.5, metadata={"help": "NER loss weight."}
-    )
+    ner_loss_weight: float = field(default=0.5, metadata={"help": "NER loss weight."})
 
 
 @dataclass
@@ -97,22 +108,34 @@ class DataTrainingArguments:
     """
 
     dataset_name: str = field(
-        metadata={"help": "The name of the dataset to use, from which it will decide entity types to use."}
+        metadata={
+            "help": "The name of the dataset to use, from which it will decide entity types to use."
+        }
     )
     dataset_config_name: Optional[str] = field(
-        default=None, metadata={"help": "The configuration name of the dataset to use (via the datasets library)."}
+        default=None,
+        metadata={
+            "help": "The configuration name of the dataset to use (via the datasets library)."
+        },
     )
-    train_file: Optional[str] = field(default=None, metadata={"help": "The input training data file (a text file)."})
+    train_file: Optional[str] = field(
+        default=None, metadata={"help": "The input training data file (a text file)."}
+    )
     validation_file: Optional[str] = field(
         default=None,
-        metadata={"help": "An optional input evaluation data file to evaluate the perplexity on (a text file)."},
+        metadata={
+            "help": "An optional input evaluation data file to evaluate the perplexity on (a text file)."
+        },
     )
     test_file: Optional[str] = field(
         default=None,
-        metadata={"help": "An optional input test data file to evaluate the perplexity on (a text file)."},
+        metadata={
+            "help": "An optional input test data file to evaluate the perplexity on (a text file)."
+        },
     )
     overwrite_cache: bool = field(
-        default=False, metadata={"help": "Overwrite the cached training and evaluation sets"}
+        default=False,
+        metadata={"help": "Overwrite the cached training and evaluation sets"},
     )
     preprocessing_num_workers: Optional[int] = field(
         default=None,
@@ -156,29 +179,37 @@ class DataTrainingArguments:
     )
     doc_stride: int = field(
         default=128,
-        metadata={"help": "When splitting up a long document into chunks, how much stride to take between chunks."},
+        metadata={
+            "help": "When splitting up a long document into chunks, how much stride to take between chunks."
+        },
     )
     max_span_length: int = field(
         default=30,
-        metadata={
-            "help": "The maximum length of an entity span."
-        },
+        metadata={"help": "The maximum length of an entity span."},
     )
     entity_type_file: str = field(
         default=None,
-        metadata={"help": "The entity type file contains all entity type names, descriptions, etc."},
+        metadata={
+            "help": "The entity type file contains all entity type names, descriptions, etc."
+        },
     )
     dataset_entity_types: Optional[List[str]] = field(
         default_factory=list,
-        metadata={"help": "The entity types of this dataset, which are only a part of types in the entity type file."},
+        metadata={
+            "help": "The entity types of this dataset, which are only a part of types in the entity type file."
+        },
     )
     entity_type_key_field: Optional[str] = field(
         default="name",
-        metadata={"help": "The field in the entity type file that will be used as key to sort entity types."},
+        metadata={
+            "help": "The field in the entity type file that will be used as key to sort entity types."
+        },
     )
     entity_type_desc_field: Optional[str] = field(
         default="description",
-        metadata={"help": "The field in the entity type file that corresponds to entity descriptions."},
+        metadata={
+            "help": "The field in the entity type file that corresponds to entity descriptions."
+        },
     )
     prediction_postprocess_func: Optional[str] = field(
         default="postprocess_nested_predictions",
@@ -196,7 +227,9 @@ class DataTrainingArguments:
             and self.validation_file is None
             and self.test_file is None
         ):
-            raise ValueError("Need either a dataset name or a training/validation file/test_file.")
+            raise ValueError(
+                "Need either a dataset name or a training/validation file/test_file."
+            )
         else:
             if self.train_file is not None:
                 extension = self.train_file.split(".")[-1]
@@ -214,11 +247,15 @@ def main():
     # or by passing the --help flag to this script.
     # We now keep distinct sets of args, for a cleaner separation of concerns.
 
-    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
+    parser = HfArgumentParser(
+        (ModelArguments, DataTrainingArguments, TrainingArguments)
+    )
     if sys.argv[-1].endswith(".json"):
         # If we pass only one argument to the script and it's the path to a json file,
         # let's parse it to get our arguments.
-        model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
+        model_args, data_args, training_args = parser.parse_json_file(
+            json_file=os.path.abspath(sys.argv[-1])
+        )
     else:
         model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
@@ -226,7 +263,9 @@ def main():
     os.environ["WANDB_PROJECT"] = data_args.wandb_project or data_args.dataset_name
     os.environ["WANDB_DIR"] = training_args.output_dir
     os.makedirs(training_args.output_dir, exist_ok=True)
-    log_file_handler = logging.FileHandler(os.path.join(training_args.output_dir, "run.log"), "a")
+    log_file_handler = logging.FileHandler(
+        os.path.join(training_args.output_dir, "run.log"), "a"
+    )
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
         datefmt="%m/%d/%Y %H:%M:%S",
@@ -250,14 +289,20 @@ def main():
 
     # Detecting last checkpoint.
     last_checkpoint = None
-    if os.path.isdir(training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
+    if (
+        os.path.isdir(training_args.output_dir)
+        and training_args.do_train
+        and not training_args.overwrite_output_dir
+    ):
         last_checkpoint = get_last_checkpoint(training_args.output_dir)
         if last_checkpoint is None and len(os.listdir(training_args.output_dir)) > 0:
             raise ValueError(
                 f"Output directory ({training_args.output_dir}) already exists and is not empty. "
                 "Use --overwrite_output_dir to overcome."
             )
-        elif last_checkpoint is not None and training_args.resume_from_checkpoint is None:
+        elif (
+            last_checkpoint is not None and training_args.resume_from_checkpoint is None
+        ):
             logger.info(
                 f"Checkpoint detected, resuming training at {last_checkpoint}. To avoid this behavior, change "
                 "the `--output_dir` or add `--overwrite_output_dir` to train from scratch."
@@ -286,7 +331,9 @@ def main():
     if data_args.test_file is not None:
         data_files["test"] = data_args.test_file
         extension = data_args.test_file.split(".")[-1]
-    raw_datasets = load_dataset(extension, data_files=data_files, cache_dir=model_args.cache_dir)
+    raw_datasets = load_dataset(
+        extension, data_files=data_files, cache_dir=model_args.cache_dir
+    )
     # See more about loading any type of standard or custom dataset (from files, python dict, pandas DataFrame, etc) at
     # https://huggingface.co/docs/datasets/loading_datasets.html.
 
@@ -296,7 +343,9 @@ def main():
     # The .from_pretrained methods guarantee that only one local process can concurrently
     # download model & vocab.
     tokenizer = AutoTokenizer.from_pretrained(
-        model_args.tokenizer_name if model_args.tokenizer_name else model_args.model_name_or_path,
+        model_args.tokenizer_name
+        if model_args.tokenizer_name
+        else model_args.model_name_or_path,
         cache_dir=model_args.cache_dir,
         use_fast=True,
         revision=model_args.model_revision,
@@ -305,7 +354,9 @@ def main():
     )
     logger.info("===== Init the model =====")
     config = BinderConfig(
-        pretrained_model_name_or_path=model_args.config_name if model_args.config_name else model_args.model_name_or_path,
+        pretrained_model_name_or_path=model_args.config_name
+        if model_args.config_name
+        else model_args.model_name_or_path,
         cache_dir=model_args.cache_dir,
         revision=model_args.model_revision,
         use_auth_token=True if model_args.use_auth_token else None,
@@ -320,7 +371,10 @@ def main():
         threshold_loss_weight=model_args.threshold_loss_weight,
         ner_loss_weight=model_args.ner_loss_weight,
     )
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = Binder(config)
+    model = nn.DataParallel(model)
+    model.to(device)
 
     # Tokenizer check: this script requires a fast tokenizer.
     if not isinstance(tokenizer, PreTrainedTokenizerFast):
@@ -343,15 +397,19 @@ def main():
     )["train"]
     entity_type_knowledge = entity_type_knowledge.filter(
         lambda example: (
-            example["dataset"] == data_args.dataset_name and (
-                len(data_args.dataset_entity_types) == 0 or
-                example[data_args.entity_type_key_field] in data_args.dataset_entity_types
+            example["dataset"] == data_args.dataset_name
+            and (
+                len(data_args.dataset_entity_types) == 0
+                or example[data_args.entity_type_key_field]
+                in data_args.dataset_entity_types
             )
         )
     )
     entity_type_knowledge = entity_type_knowledge.sort(data_args.entity_type_key_field)
 
-    entity_type_id_to_str = [et[data_args.entity_type_key_field] for et in entity_type_knowledge]
+    entity_type_id_to_str = [
+        et[data_args.entity_type_key_field] for et in entity_type_knowledge
+    ]
     entity_type_str_to_id = {t: i for i, t in enumerate(entity_type_id_to_str)}
 
     def prepare_type_features(examples):
@@ -449,15 +507,15 @@ def main():
                     token_end_mask.append(int(end_char in word_end_chars))
 
             default_span_mask = [
-                [
-                    (j - i >= 0) * s * e for j, e in enumerate(token_end_mask)
-                ]
+                [(j - i >= 0) * s * e for j, e in enumerate(token_end_mask)]
                 for i, s in enumerate(token_start_mask)
             ]
 
             start_negative_mask = [token_start_mask[:] for _ in entity_type_id_to_str]
             end_negative_mask = [token_end_mask[:] for _ in entity_type_id_to_str]
-            span_negative_mask = [[x[:] for x in default_span_mask] for _ in entity_type_id_to_str]
+            span_negative_mask = [
+                [x[:] for x in default_span_mask] for _ in entity_type_id_to_str
+            ]
 
             # We convert NER into a list of (type_id, start_index, end_index) tuples.
             tokenized_ner_annotations = []
@@ -466,13 +524,24 @@ def main():
             entity_start_chars = examples["entity_start_chars"][sample_index]
             entity_end_chars = examples["entity_end_chars"][sample_index]
             assert len(entity_types) == len(entity_start_chars) == len(entity_end_chars)
-            for entity_type, start_char, end_char in zip(entity_types, entity_start_chars, entity_end_chars):
+            for entity_type, start_char, end_char in zip(
+                entity_types, entity_start_chars, entity_end_chars
+            ):
                 # Detect if the span is in the text.
-                if offsets[text_start_index][0] <= start_char and offsets[text_end_index][1] >= end_char:
-                    start_token_index, end_token_index = text_start_index, text_end_index
+                if (
+                    offsets[text_start_index][0] <= start_char
+                    and offsets[text_end_index][1] >= end_char
+                ):
+                    start_token_index, end_token_index = (
+                        text_start_index,
+                        text_end_index,
+                    )
                     # Move the start_token_index and end_token_index to the two ends of the span.
                     # Note: we could go after the last offset if the span is the last word (edge case).
-                    while start_token_index <= text_end_index and offsets[start_token_index][0] <= start_char:
+                    while (
+                        start_token_index <= text_end_index
+                        and offsets[start_token_index][0] <= start_char
+                    ):
                         start_token_index += 1
                     start_token_index -= 1
 
@@ -486,16 +555,20 @@ def main():
                         continue
 
                     # Inclusive start and end.
-                    tokenized_ner_annotations.append({
-                        "type_id": entity_type_id,
-                        "start": start_token_index,
-                        "end": end_token_index,
-                    })
+                    tokenized_ner_annotations.append(
+                        {
+                            "type_id": entity_type_id,
+                            "start": start_token_index,
+                            "end": end_token_index,
+                        }
+                    )
 
                     # Exclude the start/end of the NER span.
                     start_negative_mask[entity_type_id][start_token_index] = 0
                     end_negative_mask[entity_type_id][end_token_index] = 0
-                    span_negative_mask[entity_type_id][start_token_index][end_token_index] = 0
+                    span_negative_mask[entity_type_id][start_token_index][
+                        end_token_index
+                    ] = 0
 
             # Skip training examples without annotations.
             if len(tokenized_ner_annotations) == 0:
@@ -503,25 +576,30 @@ def main():
 
             processed_examples["input_ids"].append(input_ids)
             if "token_type_ids" in tokenized_examples:
-                processed_examples["token_type_ids"].append(tokenized_examples["token_type_ids"][i])
-            processed_examples["attention_mask"].append(tokenized_examples["attention_mask"][i])
+                processed_examples["token_type_ids"].append(
+                    tokenized_examples["token_type_ids"][i]
+                )
+            processed_examples["attention_mask"].append(
+                tokenized_examples["attention_mask"][i]
+            )
             processed_examples["token_start_mask"].append(token_start_mask)
             processed_examples["token_end_mask"].append(token_end_mask)
 
-            processed_examples["ner"].append({
-                "annotations": tokenized_ner_annotations,
-                "start_negative_mask": start_negative_mask,
-                "end_negative_mask": end_negative_mask,
-                "span_negative_mask": span_negative_mask,
-                "token_start_mask": token_start_mask,
-                "token_end_mask": token_end_mask,
-                "default_span_mask": default_span_mask,
-            })
+            processed_examples["ner"].append(
+                {
+                    "annotations": tokenized_ner_annotations,
+                    "start_negative_mask": start_negative_mask,
+                    "end_negative_mask": end_negative_mask,
+                    "span_negative_mask": span_negative_mask,
+                    "token_start_mask": token_start_mask,
+                    "token_end_mask": token_end_mask,
+                    "default_span_mask": default_span_mask,
+                }
+            )
 
         return processed_examples
 
     if training_args.do_train:
-
         if "train" not in raw_datasets:
             raise ValueError("--do_train requires a train dataset")
         train_dataset = raw_datasets["train"]
@@ -580,7 +658,9 @@ def main():
             token_start_mask, token_end_mask = [], []
             word_start_chars = examples["word_start_chars"][sample_index]
             word_end_chars = examples["word_end_chars"][sample_index]
-            for index, (start_char, end_char) in enumerate(tokenized_examples["offset_mapping"][i]):
+            for index, (start_char, end_char) in enumerate(
+                tokenized_examples["offset_mapping"][i]
+            ):
                 if sequence_ids[index] != 0:
                     token_start_mask.append(0)
                     token_end_mask.append(0)
@@ -608,7 +688,9 @@ def main():
             # We will select sample from whole data
             eval_examples = eval_examples.select(range(data_args.max_eval_samples))
         # Validation Feature Creation
-        with training_args.main_process_first(desc="validation dataset map pre-processing"):
+        with training_args.main_process_first(
+            desc="validation dataset map pre-processing"
+        ):
             eval_dataset = eval_examples.map(
                 prepare_validation_features,
                 batched=True,
@@ -624,9 +706,13 @@ def main():
         predict_examples = raw_datasets["test"]
         if data_args.max_predict_samples is not None:
             # We will select sample from whole data
-            predict_examples = predict_examples.select(range(data_args.max_predict_samples))
+            predict_examples = predict_examples.select(
+                range(data_args.max_predict_samples)
+            )
         # Predict Feature Creation
-        with training_args.main_process_first(desc="prediction dataset map pre-processing"):
+        with training_args.main_process_first(
+            desc="prediction dataset map pre-processing"
+        ):
             predict_dataset = predict_examples.map(
                 lambda x: prepare_validation_features(x, "test"),
                 batched=True,
@@ -640,7 +726,9 @@ def main():
     data_collator = BinderDataCollator(
         type_input_ids=tokenized_descriptions["input_ids"],
         type_attention_mask=tokenized_descriptions["attention_mask"],
-        type_token_type_ids=tokenized_descriptions["token_type_ids"] if "token_type_ids" in tokenized_descriptions else None,
+        type_token_type_ids=tokenized_descriptions["token_type_ids"]
+        if "token_type_ids" in tokenized_descriptions
+        else None,
     )
 
     # Post-processing:
@@ -688,7 +776,9 @@ def main():
 
         metrics = train_result.metrics
         max_train_samples = (
-            data_args.max_train_samples if data_args.max_train_samples is not None else len(train_dataset)
+            data_args.max_train_samples
+            if data_args.max_train_samples is not None
+            else len(train_dataset)
         )
         metrics["train_samples"] = min(max_train_samples, len(train_dataset))
 
@@ -701,7 +791,11 @@ def main():
         logger.info("*** Evaluate ***")
         metrics = trainer.evaluate()
 
-        max_eval_samples = data_args.max_eval_samples if data_args.max_eval_samples is not None else len(eval_dataset)
+        max_eval_samples = (
+            data_args.max_eval_samples
+            if data_args.max_eval_samples is not None
+            else len(eval_dataset)
+        )
         metrics["eval_samples"] = min(max_eval_samples, len(eval_dataset))
 
         trainer.log_metrics("eval", metrics)
@@ -714,7 +808,9 @@ def main():
         metrics = results.metrics
 
         max_predict_samples = (
-            data_args.max_predict_samples if data_args.max_predict_samples is not None else len(predict_dataset)
+            data_args.max_predict_samples
+            if data_args.max_predict_samples is not None
+            else len(predict_dataset)
         )
         metrics["predict_samples"] = min(max_predict_samples, len(predict_dataset))
 
@@ -726,7 +822,9 @@ def main():
         kwargs["dataset_tags"] = data_args.dataset_name
         if data_args.dataset_config_name is not None:
             kwargs["dataset_args"] = data_args.dataset_config_name
-            kwargs["dataset"] = f"{data_args.dataset_name} {data_args.dataset_config_name}"
+            kwargs[
+                "dataset"
+            ] = f"{data_args.dataset_name} {data_args.dataset_config_name}"
         else:
             kwargs["dataset"] = data_args.dataset_name
 
