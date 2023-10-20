@@ -372,10 +372,7 @@ def main():
         threshold_loss_weight=model_args.threshold_loss_weight,
         ner_loss_weight=model_args.ner_loss_weight,
     )
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = Binder(config)
-    model = torch.nn.DataParallel(model)
-    model.to(device)
 
     # Tokenizer check: this script requires a fast tokenizer.
     if not isinstance(tokenizer, PreTrainedTokenizerFast):
