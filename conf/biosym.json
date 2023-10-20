@@ -8,7 +8,7 @@
     "entity_type_file": "binder/entity_types.json",
     "dataset_entity_types": ["compounds", "diseases", "mechanisms"],
     "report_to": "none",
-    "max_seq_length": 128,
+    "max_seq_length": 512,
     "use_span_width_embedding": true,
     "doc_stride": 16,
     "preprocessing_num_workers": 6,
