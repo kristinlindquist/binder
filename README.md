@@ -30,7 +30,7 @@ config = {
     "hidden_dropout_prob": 0.1,
     "init_temperature": 0.07,
     "linear_size": 128,
-    "max_span_width": 129,
+    "max_span_width": 129, # max_seq_length + 1
     "ner_loss_weight": 0.5,
     "pretrained_model_name_or_path": "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract",
     "revision": "main",
