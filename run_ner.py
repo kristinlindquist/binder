@@ -5,6 +5,7 @@ Fine-tune Binder for named entity recognition.
 import logging
 import os
 import sys
+import torch
 from dataclasses import dataclass, field
 from typing import Optional, List
 
