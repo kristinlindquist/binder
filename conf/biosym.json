@@ -6,7 +6,7 @@
     "validation_file": "data/biosym/dev.json",
     "test_file": "data/biosym/test.json",
     "entity_type_file": "binder/entity_types.json",
-    "dataset_entity_types": ["compounds", "diseases", "mechanisms"],
+    "dataset_entity_types": ["compounds", "diseases", "mechanisms", "devices", "biologics", "dosage_forms", "procedures", "roas", "behavioral_interventions", "research_tools", "diagnostics"],
     "report_to": "none",
     "max_seq_length": 512,
     "use_span_width_embedding": true,
