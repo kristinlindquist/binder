@@ -104,7 +104,7 @@ class BinderDataCollator:
             for feature_id, spans in enumerate(feature_spans):
                 feature_ids += [feature_id] * len(spans)
             # span_type_ids = [s.type_id for spans in feature_spans for s in spans]
-            span_type_ids = type_ids
+            span_type_ids = self.type_ids
 
             ner["example_indices"] = [feature_ids, span_type_ids]
             # [batch_size]
