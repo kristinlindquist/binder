@@ -331,6 +331,11 @@ class Binder(PreTrainedModel):
             flat_span_scores = span_scores.view(
                 batch_size * num_types, seq_length, seq_length
             )
+            print(
+                "start_negative_mask",
+                (batch_size * num_types, seq_length),
+                ner["start_negative_mask"].shape,
+            )
             start_negative_mask = ner["start_negative_mask"].view(
                 batch_size * num_types, seq_length
             )
