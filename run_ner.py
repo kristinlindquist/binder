@@ -508,10 +508,11 @@ def main():
                 [(j - i >= 0) * s * e for j, e in enumerate(token_end_mask)]
                 for i, s in enumerate(token_start_mask)
             ]
-
+            span_negative_mask = [
+                [x[:] for x in default_span_mask] for _ in entity_type_id_to_str
+            ]
             start_negative_mask = [token_start_mask[:] for _ in entity_type_id_to_str]
             end_negative_mask = [token_end_mask[:] for _ in entity_type_id_to_str]
-            span_negative_mask = [x[:] for x in default_span_mask]
 
             # We convert NER into a list of (type_id, start_index, end_index) tuples.
             tokenized_ner_annotations = []
@@ -562,7 +563,9 @@ def main():
                     # Exclude the start/end of the NER span.
                     start_negative_mask[entity_type_id][start_token_index] = 0
                     end_negative_mask[entity_type_id][end_token_index] = 0
-                    span_negative_mask[start_token_index][end_token_index] = 0  # ???
+                    span_negative_mask[entity_type_id][start_token_index][
+                        end_token_index
+                    ] = 0
 
             # Skip training examples without annotations.
             if len(tokenized_ner_annotations) == 0:
@@ -613,7 +616,7 @@ def main():
                 ),
                 (
                     "span_negative_mask",
-                    pa.large_list(pa.large_list(pa.int8())),
+                    pa.large_list(pa.large_list(pa.large_list(pa.int8()))),
                 ),
                 ("token_start_mask", pa.large_list(pa.int8())),
                 ("token_end_mask", pa.large_list(pa.int8())),

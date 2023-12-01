@@ -69,7 +69,7 @@ class BinderDataCollator:
             # Include [CLS]
             start_negative_mask[:, :, 0] = 1
             end_negative_mask[:, :, 0] = 1
-            span_negative_mask[:, 0, 0] = 1
+            span_negative_mask[:, :, 0, 0] = 1
 
             ner["start_negative_mask"] = start_negative_mask
             ner["end_negative_mask"] = end_negative_mask
@@ -90,7 +90,7 @@ class BinderDataCollator:
                     end_mask = end_negative_mask[feature_id][type_id].detach().clone()
                     end_mask[end] = 1
 
-                    span_mask = span_negative_mask[feature_id].detach().clone()
+                    span_mask = span_negative_mask[feature_id][type_id].detach().clone()
                     span_mask[start][end] = 1
 
                     spans.append(
