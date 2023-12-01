@@ -520,7 +520,6 @@ def main():
             entity_start_chars = examples["entity_start_chars"][sample_index]
             entity_end_chars = examples["entity_end_chars"][sample_index]
             assert len(entity_types) == len(entity_start_chars) == len(entity_end_chars)
-            span_negative_mask[start_token_index][end_token_index] = 0
             for entity_type, start_char, end_char in zip(
                 entity_types, entity_start_chars, entity_end_chars
             ):
@@ -563,6 +562,7 @@ def main():
                     # Exclude the start/end of the NER span.
                     start_negative_mask[entity_type_id][start_token_index] = 0
                     end_negative_mask[entity_type_id][end_token_index] = 0
+                    span_negative_mask[start_token_index][end_token_index] = 0  # ???
 
             # Skip training examples without annotations.
             if len(tokenized_ner_annotations) == 0:
