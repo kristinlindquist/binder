@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Tuple, List, Union, Dict
+from typing import Optional, Tuple, List, Union, Dict, Iterator
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -83,7 +83,7 @@ def contrastive_loss(
 
 
 def l2reg_contrastive_loss(
-    parameters: list[torch.nn.Parameter],
+    parameters: list[torch.nn.Parameter] | Iterator[torch.nn.Parameter],
     scores: torch.FloatTensor,
     positions: Union[List[int], Tuple[List[int], List[int]]],
     mask: torch.BoolTensor,

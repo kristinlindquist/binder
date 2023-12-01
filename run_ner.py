@@ -726,7 +726,7 @@ def main():
         type_token_type_ids=tokenized_descriptions["token_type_ids"]
         if "token_type_ids" in tokenized_descriptions
         else None,
-        type_ids=list(entity_type_str_to_id.keys()),
+        type_ids=list(entity_type_str_to_id.values()),
     )
 
     # Post-processing:
