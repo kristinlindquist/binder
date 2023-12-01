@@ -10,8 +10,8 @@ from dataclasses import dataclass, field
 from typing import Optional, List, Sequence
 
 import datasets
-from datasets import load_dataset, Value
-import pyarrow as pa
+from datasets import load_dataset
+
 import transformers
 from transformers import (
     AutoTokenizer,
@@ -505,7 +505,7 @@ def main():
                     token_end_mask.append(int(end_char in word_end_chars))
 
             default_span_mask = [
-                [bool(j - i >= 0) * s * e for j, e in enumerate(token_end_mask)]
+                [bool(j - i >= 0 * s * e) for j, e in enumerate(token_end_mask)]
                 for i, s in enumerate(token_start_mask)
             ]
             span_negative_mask = [
@@ -594,50 +594,7 @@ def main():
                 }
             )
 
-        annotation_schema = pa.struct(
-            [
-                ("type_id", pa.int8()),
-                ("start", pa.int32()),
-                ("end", pa.int32()),
-            ]
-        )
-        ner_schema = pa.struct(
-            [
-                (
-                    "annotations",
-                    pa.list_(annotation_schema),
-                ),
-                (
-                    "start_negative_mask",
-                    pa.large_list(pa.large_list(pa.int8())),
-                ),
-                (
-                    "end_negative_mask",
-                    pa.large_list(pa.large_list(pa.int8())),
-                ),
-                (
-                    "span_negative_mask",
-                    pa.large_list(pa.large_list(pa.large_list(pa.bool_()))),
-                ),
-                ("token_start_mask", pa.large_list(pa.int8())),
-                ("token_end_mask", pa.large_list(pa.int8())),
-            ]
-        )
-        schema = pa.schema(
-            pa.struct(
-                [
-                    pa.field("ner", pa.list_(ner_schema)),
-                    pa.field("input_ids", pa.large_list(pa.large_list(pa.int8()))),
-                    pa.field("attention_mask", pa.large_list(pa.large_list(pa.int8()))),
-                    pa.field(
-                        "token_start_mask", pa.large_list(pa.large_list(pa.int8()))
-                    ),
-                    pa.field("token_end_mask", pa.large_list(pa.large_list(pa.int8()))),
-                    pa.field("token_type_ids", pa.large_list(pa.large_list(pa.int8()))),
-                ],
-            )
-        )
-        return pa.Table.from_pydict(processed_examples, schema=schema)
+        return processed_examples
 
     if training_args.do_train:
         if "train" not in raw_datasets:
