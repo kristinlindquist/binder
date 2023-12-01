@@ -25,6 +25,7 @@ class BinderDataCollator:
     type_input_ids: torch.Tensor
     type_attention_mask: torch.Tensor
     type_token_type_ids: torch.Tensor
+    type_ids: list[int]
 
     def __post_init__(self):
         self.type_input_ids = torch.tensor(self.type_input_ids)
@@ -101,7 +102,8 @@ class BinderDataCollator:
             feature_ids = []
             for feature_id, spans in enumerate(feature_spans):
                 feature_ids += [feature_id] * len(spans)
-            span_type_ids = [s.type_id for spans in feature_spans for s in spans]
+            # span_type_ids = [s.type_id for spans in feature_spans for s in spans]
+            span_type_ids = type_ids
 
             ner["example_indices"] = [feature_ids, span_type_ids]
             # [batch_size]
