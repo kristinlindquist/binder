@@ -338,7 +338,7 @@ class Binder(PreTrainedModel):
                 batch_size * num_types, seq_length
             )
             span_negative_mask = ner["span_negative_mask"].view(
-                batch_size * num_types, seq_length, seq_length
+                batch_size, seq_length, seq_length  # * num_types
             )
 
             start_threshold_loss = l2reg_contrastive_loss(

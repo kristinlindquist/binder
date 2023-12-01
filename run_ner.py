@@ -7,11 +7,11 @@ import os
 import sys
 import torch
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import Optional, List, Sequence
 
 import datasets
-from datasets import load_dataset
-
+from datasets import load_dataset, Value
+import pyarrow as pa
 import transformers
 from transformers import (
     AutoTokenizer,
@@ -511,9 +511,7 @@ def main():
 
             start_negative_mask = [token_start_mask[:] for _ in entity_type_id_to_str]
             end_negative_mask = [token_end_mask[:] for _ in entity_type_id_to_str]
-            span_negative_mask = [
-                [x[:] for x in default_span_mask] for _ in entity_type_id_to_str
-            ]
+            span_negative_mask = [x[:] for x in default_span_mask]
 
             # We convert NER into a list of (type_id, start_index, end_index) tuples.
             tokenized_ner_annotations = []
@@ -522,6 +520,7 @@ def main():
             entity_start_chars = examples["entity_start_chars"][sample_index]
             entity_end_chars = examples["entity_end_chars"][sample_index]
             assert len(entity_types) == len(entity_start_chars) == len(entity_end_chars)
+            span_negative_mask[start_token_index][end_token_index] = 0
             for entity_type, start_char, end_char in zip(
                 entity_types, entity_start_chars, entity_end_chars
             ):
@@ -564,9 +563,6 @@ def main():
                     # Exclude the start/end of the NER span.
                     start_negative_mask[entity_type_id][start_token_index] = 0
                     end_negative_mask[entity_type_id][end_token_index] = 0
-                    span_negative_mask[entity_type_id][start_token_index][
-                        end_token_index
-                    ] = 0
 
             # Skip training examples without annotations.
             if len(tokenized_ner_annotations) == 0:
@@ -591,11 +587,53 @@ def main():
                     "span_negative_mask": span_negative_mask,
                     "token_start_mask": token_start_mask,
                     "token_end_mask": token_end_mask,
-                    "default_span_mask": default_span_mask,
                 }
             )
 
-        return processed_examples
+        annotation_schema = pa.struct(
+            [
+                ("type_id", pa.int8()),
+                ("start", pa.int32()),
+                ("end", pa.int32()),
+            ]
+        )
+        ner_schema = pa.struct(
+            [
+                (
+                    "annotations",
+                    pa.list_(annotation_schema),
+                ),
+                (
+                    "start_negative_mask",
+                    pa.large_list(pa.large_list(pa.int8())),
+                ),
+                (
+                    "end_negative_mask",
+                    pa.large_list(pa.large_list(pa.int8())),
+                ),
+                (
+                    "span_negative_mask",
+                    pa.large_list(pa.large_list(pa.int8())),
+                ),
+                ("token_start_mask", pa.large_list(pa.int8())),
+                ("token_end_mask", pa.large_list(pa.int8())),
+            ]
+        )
+        schema = pa.schema(
+            pa.struct(
+                [
+                    pa.field("ner", pa.list_(ner_schema)),
+                    pa.field("input_ids", pa.large_list(pa.large_list(pa.int8()))),
+                    pa.field("attention_mask", pa.large_list(pa.large_list(pa.int8()))),
+                    pa.field(
+                        "token_start_mask", pa.large_list(pa.large_list(pa.int8()))
+                    ),
+                    pa.field("token_end_mask", pa.large_list(pa.large_list(pa.int8()))),
+                    pa.field("token_type_ids", pa.large_list(pa.large_list(pa.int8()))),
+                ],
+            )
+        )
+        return pa.Table.from_pydict(processed_examples, schema=schema)
 
     if training_args.do_train:
         if "train" not in raw_datasets:
