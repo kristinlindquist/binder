@@ -49,6 +49,10 @@ from config import BinderConfig
 model = Binder(BinderConfig(**config))
 model.load_state_dict(torch.load('/tmp/pytorch_model.bin', map_location=torch.device('mps')))
 torch.save(model, 'model.pt')
+
+
+model_scripted = torch.jit.script(model) # Export to TorchScript
+model_scripted.save('model_scripted.pt') # Save
 ```
 
 ## Quick Start
