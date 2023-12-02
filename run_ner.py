@@ -22,6 +22,7 @@ from transformers import (
     set_seed,
 )
 from transformers.trainer_utils import get_last_checkpoint
+from accelerate import Accelerator
 
 from src.config import BinderConfig
 from src.model import Binder
@@ -248,6 +249,16 @@ def main():
     # or by passing the --help flag to this script.
     # We now keep distinct sets of args, for a cleaner separation of concerns.
 
+    if torch.backends.mps.is_available():
+        active_device = torch.device("mps")
+    elif torch.cuda.is_available():
+        active_device = torch.device("cuda", 0)
+    else:
+        active_device = torch.device("cpu")
+
+    accelerator = Accelerator()
+    print("Accelerator device: ", accelerator.device)
+
     parser = HfArgumentParser(
         (ModelArguments, DataTrainingArguments, TrainingArguments)
     )
@@ -350,6 +361,7 @@ def main():
         cache_dir=model_args.cache_dir,
         use_fast=True,
         revision=model_args.model_revision,
+        device_map="auto",
         use_auth_token=True if model_args.use_auth_token else None,
         add_prefix_space=True,
     )
@@ -476,17 +488,17 @@ def main():
             input_ids = tokenized_examples["input_ids"][i]
 
             # Grab the sequence corresponding to that example (to know what is the text and what are special tokens).
-            sequence_ids = tokenized_examples.sequence_ids(i)
+            sequence_ids = torch.tensor(
+                [-1 if id is None else id for id in tokenized_examples.sequence_ids(i)]
+            )
 
             # Start token index of the current text.
-            text_start_index = 0
-            while sequence_ids[text_start_index] != 0:
-                text_start_index += 1
+            text_start_index = (sequence_ids.nonzero()[0]).item() + 1
 
             # End token index of the current text.
-            text_end_index = len(input_ids) - 1
-            while sequence_ids[text_end_index] != 0:
-                text_end_index -= 1
+            text_end_index = (
+                (sequence_ids[0 : len(input_ids)] == 0).nonzero()[-1]
+            ).item()
 
             # One example can give several spans, this is the index of the example containing this span of text.
             sample_index = sample_mapping[i]
@@ -534,6 +546,7 @@ def main():
                         text_start_index,
                         text_end_index,
                     )
+
                     # Move the start_token_index and end_token_index to the two ends of the span.
                     # Note: we could go after the last offset if the span is the last word (edge case).
                     while (
