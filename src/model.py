@@ -7,6 +7,7 @@ import numpy as np
 from transformers import PreTrainedModel, AutoModel, AutoConfig
 from transformers.file_utils import ModelOutput
 import logging
+import math
 
 logger = logging.getLogger(__name__)
 
