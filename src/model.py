@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Tuple, List, Union, Dict
+from typing import Optional, Tuple, List, Union, Dict, Iterator
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -83,7 +83,7 @@ def contrastive_loss(
 
 
 def l2reg_contrastive_loss(
-    parameters: list[torch.nn.Parameter],
+    parameters: list[torch.nn.Parameter] | Iterator[torch.nn.Parameter],
     scores: torch.FloatTensor,
     positions: Union[List[int], Tuple[List[int], List[int]]],
     mask: torch.BoolTensor,
@@ -331,6 +331,16 @@ class Binder(PreTrainedModel):
             flat_span_scores = span_scores.view(
                 batch_size * num_types, seq_length, seq_length
             )
+
+            if batch_size * num_types != math.prod(
+                ner["start_negative_mask"].shape[0:2]
+            ):
+                # TODO: fix "ner" so that it can be sharded too.
+                logger.error(
+                    "Batch size mismatch: %s vs %s, probably due to use of multiple GPUs.",
+                    batch_size * num_types,
+                    ner["start_negative_mask"].shape,
+                )
             start_negative_mask = ner["start_negative_mask"].view(
                 batch_size * num_types, seq_length
             )

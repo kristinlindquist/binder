@@ -7,7 +7,7 @@ import os
 import sys
 import torch
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import Optional, List, Sequence
 
 import datasets
 from datasets import load_dataset
@@ -350,6 +350,7 @@ def main():
         cache_dir=model_args.cache_dir,
         use_fast=True,
         revision=model_args.model_revision,
+        device_map="auto",
         use_auth_token=True if model_args.use_auth_token else None,
         add_prefix_space=True,
     )
@@ -476,17 +477,17 @@ def main():
             input_ids = tokenized_examples["input_ids"][i]
 
             # Grab the sequence corresponding to that example (to know what is the text and what are special tokens).
-            sequence_ids = tokenized_examples.sequence_ids(i)
+            sequence_ids = torch.tensor(
+                [-1 if id is None else id for id in tokenized_examples.sequence_ids(i)]
+            )
 
             # Start token index of the current text.
-            text_start_index = 0
-            while sequence_ids[text_start_index] != 0:
-                text_start_index += 1
+            text_start_index = (sequence_ids.nonzero()[0]).item() + 1
 
             # End token index of the current text.
-            text_end_index = len(input_ids) - 1
-            while sequence_ids[text_end_index] != 0:
-                text_end_index -= 1
+            text_end_index = (
+                (sequence_ids[0 : len(input_ids)] == 0).nonzero()[-1]
+            ).item()
 
             # One example can give several spans, this is the index of the example containing this span of text.
             sample_index = sample_mapping[i]
@@ -505,15 +506,15 @@ def main():
                     token_end_mask.append(int(end_char in word_end_chars))
 
             default_span_mask = [
-                [(j - i >= 0) * s * e for j, e in enumerate(token_end_mask)]
+                [bool(j - i >= 0 * s * e) for j, e in enumerate(token_end_mask)]
                 for i, s in enumerate(token_start_mask)
+            ]
+            span_negative_mask = [
+                [x[:] for x in default_span_mask] for _ in entity_type_id_to_str
             ]
 
             start_negative_mask = [token_start_mask[:] for _ in entity_type_id_to_str]
             end_negative_mask = [token_end_mask[:] for _ in entity_type_id_to_str]
-            span_negative_mask = [
-                [x[:] for x in default_span_mask] for _ in entity_type_id_to_str
-            ]
 
             # We convert NER into a list of (type_id, start_index, end_index) tuples.
             tokenized_ner_annotations = []
@@ -534,6 +535,7 @@ def main():
                         text_start_index,
                         text_end_index,
                     )
+
                     # Move the start_token_index and end_token_index to the two ends of the span.
                     # Note: we could go after the last offset if the span is the last word (edge case).
                     while (
@@ -566,7 +568,7 @@ def main():
                     end_negative_mask[entity_type_id][end_token_index] = 0
                     span_negative_mask[entity_type_id][start_token_index][
                         end_token_index
-                    ] = 0
+                    ] = False
 
             # Skip training examples without annotations.
             if len(tokenized_ner_annotations) == 0:
@@ -591,7 +593,6 @@ def main():
                     "span_negative_mask": span_negative_mask,
                     "token_start_mask": token_start_mask,
                     "token_end_mask": token_end_mask,
-                    "default_span_mask": default_span_mask,
                 }
             )
 
