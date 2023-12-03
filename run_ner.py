@@ -22,7 +22,6 @@ from transformers import (
     set_seed,
 )
 from transformers.trainer_utils import get_last_checkpoint
-from accelerate import Accelerator
 
 from src.config import BinderConfig
 from src.model import Binder
@@ -248,16 +247,6 @@ def main():
     # See all possible arguments in src/transformers/training_args.py
     # or by passing the --help flag to this script.
     # We now keep distinct sets of args, for a cleaner separation of concerns.
-
-    if torch.backends.mps.is_available():
-        active_device = torch.device("mps")
-    elif torch.cuda.is_available():
-        active_device = torch.device("cuda", 0)
-    else:
-        active_device = torch.device("cpu")
-
-    accelerator = Accelerator()
-    print("Accelerator device: ", accelerator.device)
 
     parser = HfArgumentParser(
         (ModelArguments, DataTrainingArguments, TrainingArguments)
@@ -739,7 +728,6 @@ def main():
         type_token_type_ids=tokenized_descriptions["token_type_ids"]
         if "token_type_ids" in tokenized_descriptions
         else None,
-        type_ids=list(entity_type_str_to_id.values()),
     )
 
     # Post-processing:

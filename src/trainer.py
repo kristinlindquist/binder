@@ -25,14 +25,12 @@ class BinderDataCollator:
     type_input_ids: torch.Tensor
     type_attention_mask: torch.Tensor
     type_token_type_ids: torch.Tensor
-    type_ids: list[int]
 
     def __post_init__(self):
         self.type_input_ids = torch.tensor(self.type_input_ids)
         self.type_attention_mask = torch.tensor(self.type_attention_mask)
         if self.type_token_type_ids is not None:
             self.type_token_type_ids = torch.tensor(self.type_token_type_ids)
-        self.type_ids = self.type_ids
 
     def __call__(self, features: List) -> Dict[str, Any]:
         batch = {}
