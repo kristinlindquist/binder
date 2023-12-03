@@ -331,11 +331,16 @@ class Binder(PreTrainedModel):
             flat_span_scores = span_scores.view(
                 batch_size * num_types, seq_length, seq_length
             )
-            print(
-                "start_negative_mask",
-                (batch_size * num_types, seq_length),
-                ner["start_negative_mask"].shape,
-            )
+
+            if batch_size * num_types != math.prod(
+                ner["start_negative_mask"].shape[0:2]
+            ):
+                # TODO: fix "ner" so that it can be sharded too.
+                logger.error(
+                    "Batch size mismatch: %s vs %s, probably due to use of multiple GPUs.",
+                    batch_size * num_types,
+                    ner["start_negative_mask"].shape,
+                )
             start_negative_mask = ner["start_negative_mask"].view(
                 batch_size * num_types, seq_length
             )
