@@ -30,7 +30,7 @@ config = {
     "hidden_dropout_prob": 0.1,
     "init_temperature": 0.07,
     "linear_size": 128,
-    "max_span_width": 129, # max_seq_length + 1
+    "max_span_width": 513, # max_seq_length + 1
     "ner_loss_weight": 0.5,
     "pretrained_model_name_or_path": "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract",
     "revision": "main",
@@ -46,13 +46,10 @@ sys.path.append("src")
 torch.device('mps')
 from model import Binder
 from config import BinderConfig
-model = Binder(BinderConfig(**config))
-model.load_state_dict(torch.load('/tmp/pytorch_model.bin', map_location=torch.device('mps')))
+binder_config = BinderConfig(**config)
+model = Binder(binder_config)
+model = model.from_pretrained("/tmp/checkpoint-17919/", config=binder_config)
 torch.save(model, 'model.pt')
-
-
-model_scripted = torch.jit.script(model) # Export to TorchScript
-model_scripted.save('model_scripted.pt') # Save
 ```
 
 ## Quick Start
